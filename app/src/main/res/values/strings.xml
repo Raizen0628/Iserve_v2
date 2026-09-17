@@ -1,0 +1,96 @@
+<resources>
+    <string name="app_name">IServeKo</string>
+    <string name="securing_serving">Securing &amp; Serving our local community</string>
+    <string name="iserveko">iServeKo</string>
+    <string name="username_hint">Enter Email</string>
+    <string name="password_hint">Enter Password</string>
+    <string name="remember_me">Remember me?</string>
+    <string name="login">Login</string>
+    <string name="dont_have_account">Don\'t have an account? </string>
+    <string name="sign_up">Sign up</string>
+    <string name="next">Next</string>
+    <string name="personal_details">Personal Details</string>
+    <string name="signup_description">Please enter your correct legal name and password details for verification</string>
+    <string name="username_label">EMAIL</string>
+    <string name="password_label">PASSWORD</string>
+    <string name="back_label">← Back</string>
+    <string name="enter">Enter</string>
+    <string name="account_setup_title">Account Setup</string>
+    <string name="account_setup_description">Select your account type to proceed with the registration process.</string>
+    <string name="barangay_services">Barangay Services</string>
+    <string name="announcement_bulletin">📢  Announcement / Bulletin</string>
+    <string name="latest_announcements">Latest barangay announcements</string>
+    <string name="logo_content_description">iServeko Logo</string>
+    <string name="arrow_next">›</string>
+    <string name="barangay_clearance">📝 Barangay Clearance</string>
+    <string name="clearance_desc">Request and track your clearance online</string>
+    <string name="certificate_request">📄 Certificate Request</string>
+    <string name="certificate_desc">Apply for Residency and Indigency certificates</string>
+    <string name="complaints_reports">💬 Complaints &amp; Reports</string>
+    <string name="complaints_desc">Submit concerns and feedback</string>
+    <string name="emergency_hotline">🚨 Emergency Hotline</string>
+    <string name="emergency_desc">Quick access to emergency contacts</string>
+    <string name="event_calendar">📅 Event Calendar</string>
+    <string name="event_desc">View upcoming barangay events</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_announcements">Announcements</string>
+    <string name="nav_services">Services</string>
+    <string name="nav_notifications">Notifications</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Official Dashboard Strings -->
+    <string name="official_dashboard">Official Dashboard</string>
+    <string name="barangay_management">Barangay Management</string>
+    <string name="pending_requests">Pending Requests</string>
+    <string name="pending_requests_desc">Review and approve document requests</string>
+    <string name="manage_announcements">Manage Announcements</string>
+    <string name="manage_announcements_desc">Post and edit barangay updates</string>
+    <string name="resident_directory">Resident Directory</string>
+    <string name="resident_directory_desc">View and manage resident profiles</string>
+    <string name="reports_analytics">Reports &amp; Analytics</string>
+    <string name="reports_analytics_desc">Track barangay service statistics</string>
+    <string name="official_welcome">Welcome, Barangay Official</string>
+    <string name="barangay_subtitle">Mas mabilis na serbisyo, mas maunlad na barangay.</string>
+    <string name="official_subtitle">Pamamahala para sa mas maayos na komunidad.</string>
+
+    <!-- Announcement Feature Strings -->
+    <string name="announcements_header">Announcements</string>
+    <string name="search_announcements_hint">Search announcements…</string>
+    <string name="pinned_announcement">📌 Pinned Announcement</string>
+    <string name="announcement_title_1">Barangay Clean-up Drive</string>
+    <string name="announcement_date_1">Sept 15, 2026</string>
+    <string name="announcement_desc_1">Join us this Saturday for our monthly community clean-up drive. Meet at the barangay hall at 6:00 AM. Materials will be provided.</string>
+    <string name="announcement_title_2">Health Center Advisory</string>
+    <string name="announcement_date_2">Sept 12, 2026</string>
+    <string name="announcement_desc_2">Free routine vaccination for kids aged 0-5 years old will be available on Tuesday, Sept 16, from 8:00 AM to 3:00 PM.</string>
+    <string name="create_announcement">+ Create Announcement</string>
+
+    <!-- Service Page Strings -->
+    <string name="services_header">Services</string>
+    <string name="services_subtitle">Get help when you need it.</string>
+    <string name="emoji_emergency">🚨</string>
+    <string name="emoji_tanod">🚔</string>
+    <string name="emoji_ambulance">🚑</string>
+    <string name="emoji_health">🏥</string>
+    <string name="emoji_hall">🏛️</string>
+
+    <string name="emergency_hotline_title">🚨 Emergency Hotline</string>
+    <string name="emergency_hotline_desc">Call 911 for immediate emergency assistance</string>
+    <string name="contact_911">911</string>
+
+    <string name="barangay_tanod_title">🚔 Barangay Tanod</string>
+    <string name="barangay_tanod_desc">Contact barangay personnel for security concerns (0955 396 5812)</string>
+    <string name="contact_tanod">09553965812</string>
+
+    <string name="ambulance_medical_title">🚑 Ambulance / Medical Emergency</string>
+    <string name="ambulance_medical_desc">Get immediate medical assistance (0917 123 4567)</string>
+    <string name="contact_ambulance">09171234567</string>
+
+    <string name="health_center_title">🏥 Barangay Health Center</string>
+    <string name="health_center_desc">Contact the health center for medical concerns (0918 234 5678)</string>
+    <string name="contact_health">09182345678</string>
+
+    <string name="barangay_hall_title">🏛️ Barangay Hall</string>
+    <string name="barangay_hall_desc">Contact barangay officials for assistance (0919 345 6789)</string>
+    <string name="contact_hall">09193456789</string>
+</resources>
