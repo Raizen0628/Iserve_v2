@@ -7,17 +7,28 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Objects;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.android.volley.toolbox.JsonArrayRequest;
+import java.util.ArrayList;
+import java.util.List;
+import org.json.JSONObject;
+
 public class MainActivity extends AppCompatActivity {
 
-    private connect_sql connectSql;
+    // Emulator: 10.0.2.2 | Physical phone: your PC's IP (run ipconfig)
+    private static final String BASE_URL = "http://192.168.1.2/iserveko/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,79 +36,69 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Initialize SQL Server connection helper
-        connectSql = new connect_sql();
-
         EditText usernameInput = findViewById(R.id.username_input);
         EditText passwordInput = findViewById(R.id.password_input);
         Button loginButton = findViewById(R.id.button);
         TextView signupText = findViewById(R.id.signupText);
 
         loginButton.setOnClickListener(v -> {
-            String email = usernameInput.getText().toString().trim();
+            String username = usernameInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(MainActivity.this, "Please enter all fields", Toast.LENGTH_SHORT).show();
+            if (username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Please enter all fields", Toast.LENGTH_SHORT).show();
             } else {
-                loginWithSQLServer(email, password);
+                loginUser(username, password);
             }
         });
 
-        signupText.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, AccountSetupActivity.class);
-            startActivity(intent);
-        });
+        signupText.setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this, AccountSetupActivity.class)));
     }
 
-    private void loginWithSQLServer(String email, String password) {
-        try {
-            Connection con = connectSql.conclass();
+    private void loginUser(String username, String password) {
+        StringRequest request = new StringRequest(Request.Method.POST, BASE_URL + "login.php",
+                response -> {
+                    try {
+                        JSONObject json = new JSONObject(response);
 
-            if (con == null) {
-                Toast.makeText(MainActivity.this, "Unable to connect to database", Toast.LENGTH_SHORT).show();
-                return;
+                        if (json.getBoolean("success")) {
+                            JSONObject user = json.getJSONObject("user");
+                            String role = user.optString("role", "").trim();
+
+                            Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show();
+
+                            if (role.isEmpty() || role.equals("null")) {
+                                Intent intent = new Intent(this, AccountSetupActivity.class);
+                                intent.putExtra("EMAIL", username);
+                                startActivity(intent);
+                            } else if (role.equals("Resident")) {
+                                startActivity(new Intent(this, ResidentDashboardActivity.class));
+                                finish();
+                            } else if (role.equals("Barangay Official")) {
+                                startActivity(new Intent(this, OfficialDashboardActivity.class));
+                                finish();
+                            } else {
+                                Toast.makeText(this, "Welcome " + role, Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(this, json.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Toast.makeText(this, "Invalid server response", Toast.LENGTH_LONG).show();
+                    }
+                },
+                error -> Toast.makeText(this, "Connection error: " + error.getMessage(), Toast.LENGTH_LONG).show()
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("username", username);
+                params.put("password", password);
+                return params;
             }
+        };
 
-            // Query SQL Server dbo.Users table for Role
-            String query = "SELECT Role FROM dbo.Users WHERE Email = ? AND PasswordHash = ?";
-            PreparedStatement stmt = con.prepareStatement(query);
-            stmt.setString(1, email);
-            stmt.setString(2, password);
-
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
-                String role = rs.getString("Role");
-
-                // Route to appropriate activity based on role from SQL Server
-                if (role == null || role.trim().isEmpty()) {
-                    Intent intent = new Intent(MainActivity.this, AccountSetupActivity.class);
-                    intent.putExtra("EMAIL", email);
-                    startActivity(intent);
-                } else if (Objects.equals(role, "Resident")) {
-                    Intent intent = new Intent(MainActivity.this, ResidentDashboardActivity.class);
-                    startActivity(intent);
-                    finish();
-                } else if (Objects.equals(role, "Barangay Official")) {
-                    Intent intent = new Intent(MainActivity.this, OfficialDashboardActivity.class);
-                    startActivity(intent);
-                    finish();
-                } else {
-                    Toast.makeText(MainActivity.this, "Welcome " + role, Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(MainActivity.this, "Invalid Credentials", Toast.LENGTH_SHORT).show();
-            }
-
-            // Clean up connections
-            rs.close();
-            stmt.close();
-            con.close();
-
-        } catch (Exception e) {
-            Toast.makeText(MainActivity.this, "Database Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+        Volley.newRequestQueue(this).add(request);
     }
 }
