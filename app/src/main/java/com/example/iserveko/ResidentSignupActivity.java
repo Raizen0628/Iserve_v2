@@ -2,6 +2,9 @@ package com.example.iserveko;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -9,25 +12,21 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.android.volley.Request;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ResidentSignupActivity extends AppCompatActivity {
 
-    private static final String BASE_URL = "http://192.168.1.2/iserveko/";
-    private static final String ROLE = "Resident";
+    private DatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_resident_signup);
+
+        databaseHelper = new DatabaseHelper(this);
 
         TextView backButton    = findViewById(R.id.btnBack);
         EditText firstName     = findViewById(R.id.first_name_input);
@@ -40,7 +39,9 @@ public class ResidentSignupActivity extends AppCompatActivity {
         EditText confirmInput  = findViewById(R.id.confirm_password_input);
         Button registerButton  = findViewById(R.id.btnRegister);
 
-        backButton.setOnClickListener(v -> finish());
+        if (backButton != null) {
+            backButton.setOnClickListener(v -> finish());
+        }
 
         registerButton.setOnClickListener(v -> {
             String first   = firstName.getText().toString().trim();
@@ -58,44 +59,55 @@ public class ResidentSignupActivity extends AppCompatActivity {
             } else if (!pass.equals(confirm)) {
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             } else {
-                registerUser(first, middle, last, email, address, dob, pass);
+                // 1. Save locally in SQLite Database
+                databaseHelper.addResident(first, middle, last, email, address, dob, pass);
+
+                // 2. Insert into MSSQL Database
+                registerUserOnMSSQL(first, last, email, pass, "Resident");
             }
         });
     }
 
-    private void registerUser(String first, String middle, String last, String email,
-                              String address, String dob, String password) {
-        StringRequest request = new StringRequest(Request.Method.POST, BASE_URL + "register.php",
-                response -> {
-                    try {
-                        JSONObject json = new JSONObject(response);
-                        Toast.makeText(this, json.getString("message"), Toast.LENGTH_LONG).show();
+    private void registerUserOnMSSQL(String first, String last, String email, String password, String role) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
 
-                        if (json.getBoolean("success")) {
-                            startActivity(new Intent(this, MainActivity.class));
-                            finish();
-                        }
-                    } catch (JSONException e) {
-                        Toast.makeText(this, "Invalid server response", Toast.LENGTH_LONG).show();
-                    }
-                },
-                error -> Toast.makeText(this, "Connection error: " + error.getMessage(), Toast.LENGTH_LONG).show()
-        ) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("first_name", first);
-                params.put("middle_name", middle);
-                params.put("last_name", last);
-                params.put("email", email);
-                params.put("address", address);
-                params.put("dob", dob);
-                params.put("password", password);
-                params.put("role", ROLE);
-                return params;
+        executor.execute(() -> {
+            try {
+                Connection con = connect_sql.getConnection();
+                if (con != null) {
+                    String insertQuery = "INSERT INTO users (first_name, last_name, email, password, role) VALUES ('"
+                            + first + "', '" + last + "', '" + email + "', '" + password + "', '" + role + "')";
+
+                    Statement stmt = con.createStatement();
+                    stmt.executeUpdate(insertQuery);
+
+                    handler.post(() -> {
+                        Toast.makeText(ResidentSignupActivity.this, "Registered successfully in MSSQL!", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(ResidentSignupActivity.this, MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                        finish();
+                    });
+                } else {
+                    handler.post(() -> {
+                        Toast.makeText(ResidentSignupActivity.this, "MSSQL Connection Failed. Saved Locally.", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(ResidentSignupActivity.this, MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                        finish();
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("MSSQL_REGISTER_ERROR", e.getMessage(), e);
+                handler.post(() -> {
+                    Toast.makeText(ResidentSignupActivity.this, "MSSQL Insert Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(ResidentSignupActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                });
             }
-        };
-
-        Volley.newRequestQueue(this).add(request);
+        });
     }
 }

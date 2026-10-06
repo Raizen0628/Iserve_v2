@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.recyclerview)
     implementation("com.android.volley:volley:1.2.1")
+    implementation("net.sourceforge.jtds:jtds:1.3.1")
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

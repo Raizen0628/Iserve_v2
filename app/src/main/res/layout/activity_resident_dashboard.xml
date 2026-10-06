@@ -89,13 +89,13 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Announcement Card -->
+            <!-- Main Announcement Card Header -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardAnnouncement"
                 style="?attr/materialCardViewFilledStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="12dp"
                 app:cardBackgroundColor="#00CFEF"
                 app:cardCornerRadius="24dp"
                 app:strokeWidth="0dp">
@@ -158,6 +158,81 @@
                         tools:ignore="ContentDescription" />
 
                 </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Dynamic Latest Announcement Display Box on Dashboard -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardDashAnnouncementPreview"
+                style="?attr/materialCardViewElevatedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#FFFDE7"
+                app:cardCornerRadius="20dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#FBC02D">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/txtDashBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📢 LATEST ANNOUNCEMENT"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                            android:textColor="#F57F17"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnViewAllAnnouncements"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:text="View All ›"
+                            android:textColor="@color/dash_teal"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <TextView
+                        android:id="@+id/txtDashAnnTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="No announcements available"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        android:textColor="@color/onSurface"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtDashAnnDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/onSurfaceVariant"
+                        tools:text="Sept 15, 2026" />
+
+                    <TextView
+                        android:id="@+id/txtDashAnnDesc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:maxLines="3"
+                        android:ellipsize="end"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/onSurface"
+                        tools:text="Join us for the upcoming community events and updates." />
+
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <GridLayout
