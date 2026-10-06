@@ -2,6 +2,9 @@ package com.example.iserveko;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -9,7 +12,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -76,14 +83,53 @@ public class OfficialSignupActivity extends AppCompatActivity {
                 return;
             }
 
-            if (databaseHelper.addOfficial(firstName, middleName, lastName, email, mobile, position, password)) {
-                Toast.makeText(this, "Official Registration Successful", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
-            } else {
-                Toast.makeText(this, "Registration Failed. Email might already exist.", Toast.LENGTH_SHORT).show();
+            // 1. Save locally in SQLite Database
+            databaseHelper.addOfficial(firstName, middleName, lastName, email, mobile, position, password);
+
+            // 2. Insert into MSSQL Database
+            registerOfficialOnMSSQL(firstName, lastName, email, password);
+        });
+    }
+
+    private void registerOfficialOnMSSQL(String first, String last, String email, String password) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        executor.execute(() -> {
+            try {
+                Connection con = connect_sql.getConnection();
+                if (con != null) {
+                    String insertQuery = "INSERT INTO users (first_name, last_name, email, password, role) VALUES ('"
+                            + first + "', '" + last + "', '" + email + "', '" + password + "', 'Barangay Official')";
+
+                    Statement stmt = con.createStatement();
+                    stmt.executeUpdate(insertQuery);
+
+                    handler.post(() -> {
+                        Toast.makeText(OfficialSignupActivity.this, "Official Registered in MSSQL!", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(OfficialSignupActivity.this, MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                        finish();
+                    });
+                } else {
+                    handler.post(() -> {
+                        Toast.makeText(OfficialSignupActivity.this, "MSSQL Connection Failed. Saved Locally.", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(OfficialSignupActivity.this, MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                        finish();
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("MSSQL_REGISTER_ERROR", e.getMessage(), e);
+                handler.post(() -> {
+                    Toast.makeText(OfficialSignupActivity.this, "MSSQL Insert Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(OfficialSignupActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                });
             }
         });
     }
