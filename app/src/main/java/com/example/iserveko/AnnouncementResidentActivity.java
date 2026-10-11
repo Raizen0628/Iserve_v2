@@ -70,7 +70,15 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                startActivity(new Intent(this, ResidentDashboardActivity.class));
+                Intent intent = new Intent(this, ResidentDashboardActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_notifications) {
+                Intent intent = new Intent(this, NotificationsActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_announcements) {

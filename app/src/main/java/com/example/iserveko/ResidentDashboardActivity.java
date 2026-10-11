@@ -71,10 +71,17 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_announcements) {
-                startActivity(new Intent(this, AnnouncementResidentActivity.class));
+                Intent intent = new Intent(this, AnnouncementResidentActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_services) {
                 startActivity(new Intent(this, Service.class));
+                return true;
+            } else if (itemId == R.id.nav_notifications) {
+                Intent intent = new Intent(this, NotificationsActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_home) {
                 return true;
