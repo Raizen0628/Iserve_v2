@@ -102,11 +102,9 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
                         list.add(new Announcement(id, title, desc, date, isPinned));
                     }
 
-                    if (!list.isEmpty()) {
-                        adapter = new AnnouncementAdapter(list, false, null);
-                        recyclerView.setAdapter(adapter);
-                        return;
-                    }
+                    adapter = new AnnouncementAdapter(list, false, null);
+                    recyclerView.setAdapter(adapter);
+                    return;
                 } catch (SQLException e) {
                     Log.e("MSSQL_RESIDENT_LOAD", e.getMessage(), e);
                 }

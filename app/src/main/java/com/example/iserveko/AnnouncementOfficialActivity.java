@@ -93,10 +93,8 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                         list.add(new Announcement(id, title, desc, date, isPinned));
                     }
 
-                    if (!list.isEmpty()) {
-                        bindAdapter(list);
-                        return;
-                    }
+                    bindAdapter(list);
+                    return;
                 } catch (SQLException e) {
                     Log.e("MSSQL_LOAD_ERROR", e.getMessage(), e);
                 }
@@ -208,14 +206,14 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                         return;
                     }
 
-                    databaseHelper.updateAnnouncement(announcement.getId(), title, desc, isPinned);
-                    updateAnnouncementOnMSSQL(announcement.getId(), title, desc, isPinned);
+                    databaseHelper.updateAnnouncement(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
+                    updateAnnouncementOnMSSQL(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void updateAnnouncementOnMSSQL(int id, String title, String desc, boolean isPinned) {
+    private void updateAnnouncementOnMSSQL(int id, String oldTitle, String newTitle, String desc, boolean isPinned) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
 
@@ -223,10 +221,10 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String sql = "UPDATE announcements SET title='" + title.replace("'", "''")
+                    String sql = "UPDATE announcements SET title='" + newTitle.replace("'", "''")
                             + "', description='" + desc.replace("'", "''")
                             + "', is_pinned=" + (isPinned ? 1 : 0)
-                            + " WHERE id=" + id;
+                            + " WHERE id=" + id + " OR title='" + oldTitle.replace("'", "''") + "'";
 
                     Statement stmt = con.createStatement();
                     stmt.executeUpdate(sql);
@@ -246,14 +244,14 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 .setTitle("Delete Announcement")
                 .setMessage("Are you sure you want to delete \"" + announcement.getTitle() + "\"?")
                 .setPositiveButton("Delete", (dialog, which) -> {
-                    databaseHelper.deleteAnnouncement(announcement.getId());
-                    deleteAnnouncementFromMSSQL(announcement.getId());
+                    databaseHelper.deleteAnnouncement(announcement.getId(), announcement.getTitle());
+                    deleteAnnouncementFromMSSQL(announcement.getId(), announcement.getTitle());
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void deleteAnnouncementFromMSSQL(int id) {
+    private void deleteAnnouncementFromMSSQL(int id, String title) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
 
@@ -261,7 +259,7 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String sql = "DELETE FROM announcements WHERE id=" + id;
+                    String sql = "DELETE FROM announcements WHERE id=" + id + " OR title='" + title.replace("'", "''") + "'";
                     Statement stmt = con.createStatement();
                     stmt.executeUpdate(sql);
                 }

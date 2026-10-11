@@ -101,10 +101,14 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("EMAIL", username);
             startActivity(intent);
         } else if ("Resident".equals(role)) {
-            startActivity(new Intent(this, ResidentDashboardActivity.class));
+            Intent intent = new Intent(this, ResidentDashboardActivity.class);
+            intent.putExtra("EMAIL", username);
+            startActivity(intent);
             finish();
         } else if ("Barangay Official".equals(role)) {
-            startActivity(new Intent(this, OfficialDashboardActivity.class));
+            Intent intent = new Intent(this, OfficialDashboardActivity.class);
+            intent.putExtra("EMAIL", username);
+            startActivity(intent);
             finish();
         } else {
             Toast.makeText(this, "Welcome " + role, Toast.LENGTH_SHORT).show();

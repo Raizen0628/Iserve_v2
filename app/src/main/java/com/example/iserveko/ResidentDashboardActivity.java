@@ -46,8 +46,24 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         findViewById(R.id.cardDashAnnouncementPreview).setOnClickListener(v -> openAnnouncements.run());
         findViewById(R.id.btnViewAllAnnouncements).setOnClickListener(v -> openAnnouncements.run());
 
+        findViewById(R.id.cardClearance).setOnClickListener(v -> {
+            Intent intent = new Intent(this, DocumentRequestActivity.class);
+            if (getIntent().hasExtra("EMAIL")) {
+                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+            }
+            startActivity(intent);
+        });
+
         findViewById(R.id.cardEmergency).setOnClickListener(v -> {
             startActivity(new Intent(this, Service.class));
+        });
+
+        findViewById(R.id.cardBorrowTablesChairs).setOnClickListener(v -> {
+            Intent intent = new Intent(this, BorrowResidentActivity.class);
+            if (getIntent().hasExtra("EMAIL")) {
+                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+            }
+            startActivity(intent);
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);

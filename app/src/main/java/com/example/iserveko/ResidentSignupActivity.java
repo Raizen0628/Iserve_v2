@@ -34,7 +34,6 @@ public class ResidentSignupActivity extends AppCompatActivity {
         EditText lastName      = findViewById(R.id.last_name_input);
         EditText emailInput    = findViewById(R.id.email_input);
         EditText addressInput  = findViewById(R.id.address_input);
-        EditText dobInput      = findViewById(R.id.dob_input);
         EditText passwordInput = findViewById(R.id.password_input);
         EditText confirmInput  = findViewById(R.id.confirm_password_input);
         Button registerButton  = findViewById(R.id.btnRegister);
@@ -49,18 +48,17 @@ public class ResidentSignupActivity extends AppCompatActivity {
             String last    = lastName.getText().toString().trim();
             String email   = emailInput.getText().toString().trim();
             String address = addressInput.getText().toString().trim();
-            String dob     = dobInput.getText().toString().trim();
             String pass    = passwordInput.getText().toString();
             String confirm = confirmInput.getText().toString();
 
             if (first.isEmpty() || last.isEmpty() || email.isEmpty()
-                    || address.isEmpty() || dob.isEmpty() || pass.isEmpty()) {
+                    || address.isEmpty() || pass.isEmpty()) {
                 Toast.makeText(this, "Please fill in all required fields", Toast.LENGTH_SHORT).show();
             } else if (!pass.equals(confirm)) {
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             } else {
                 // 1. Save locally in SQLite Database
-                databaseHelper.addResident(first, middle, last, email, address, dob, pass);
+                databaseHelper.addResident(first, middle, last, email, address, "", pass);
 
                 // 2. Insert into MSSQL Database
                 registerUserOnMSSQL(first, last, email, pass, "Resident");
