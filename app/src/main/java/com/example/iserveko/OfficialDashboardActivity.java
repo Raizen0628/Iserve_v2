@@ -41,6 +41,8 @@ public class OfficialDashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(this, AnnouncementOfficialActivity.class))
         );
 
+        findViewById(R.id.cardPendingRequests).setOnClickListener(v -> showPendingRequestsTypeDialog());
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -58,6 +60,21 @@ public class OfficialDashboardActivity extends AppCompatActivity {
         });
 
         loadUsers();
+    }
+
+    private void showPendingRequestsTypeDialog() {
+        String[] options = {"📄 Document Requests (Clearances & Certificates)", "🪑 Equipment Borrowing (Tables & Chairs)"};
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Manage Pending Requests")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        startActivity(new Intent(this, DocumentOfficialActivity.class));
+                    } else if (which == 1) {
+                        startActivity(new Intent(this, BorrowOfficialActivity.class));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void loadUsers() {

@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginTop="16dp"
-                android:text="🧑 RESIDENT REGISTRATION"
+                android:text="  RESIDENT REGISTRATION"
                 android:textColor="#000000"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -128,24 +128,7 @@
                 android:paddingStart="16dp"
                 android:textColor="#000000" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Date of Birth"
-                android:textColor="#000000"
-                android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/dob_input"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/rounded"
-                android:hint="YYYY-MM-DD"
-                android:inputType="date"
-                android:paddingStart="16dp"
-                android:textColor="#000000" />
 
             <TextView
                 android:layout_width="wrap_content"

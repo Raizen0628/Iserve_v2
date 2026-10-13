@@ -48,6 +48,12 @@ public class Service extends AppCompatActivity {
                 // If dashboard was the caller, just finish to go back
                 finish();
                 return true;
+            } else if (itemId == R.id.nav_notifications) {
+                Intent intent = new Intent(this, NotificationsActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
+                finish();
+                return true;
             } else if (itemId == R.id.nav_services) {
                 return true;
             }

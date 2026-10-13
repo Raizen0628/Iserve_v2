@@ -46,8 +46,24 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         findViewById(R.id.cardDashAnnouncementPreview).setOnClickListener(v -> openAnnouncements.run());
         findViewById(R.id.btnViewAllAnnouncements).setOnClickListener(v -> openAnnouncements.run());
 
+        findViewById(R.id.cardClearance).setOnClickListener(v -> {
+            Intent intent = new Intent(this, DocumentRequestActivity.class);
+            if (getIntent().hasExtra("EMAIL")) {
+                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+            }
+            startActivity(intent);
+        });
+
         findViewById(R.id.cardEmergency).setOnClickListener(v -> {
             startActivity(new Intent(this, Service.class));
+        });
+
+        findViewById(R.id.cardBorrowTablesChairs).setOnClickListener(v -> {
+            Intent intent = new Intent(this, BorrowResidentActivity.class);
+            if (getIntent().hasExtra("EMAIL")) {
+                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+            }
+            startActivity(intent);
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
@@ -55,10 +71,17 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_announcements) {
-                startActivity(new Intent(this, AnnouncementResidentActivity.class));
+                Intent intent = new Intent(this, AnnouncementResidentActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_services) {
                 startActivity(new Intent(this, Service.class));
+                return true;
+            } else if (itemId == R.id.nav_notifications) {
+                Intent intent = new Intent(this, NotificationsActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_home) {
                 return true;

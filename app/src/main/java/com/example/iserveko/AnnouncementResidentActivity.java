@@ -70,7 +70,15 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                startActivity(new Intent(this, ResidentDashboardActivity.class));
+                Intent intent = new Intent(this, ResidentDashboardActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_notifications) {
+                Intent intent = new Intent(this, NotificationsActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_announcements) {
@@ -102,11 +110,9 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
                         list.add(new Announcement(id, title, desc, date, isPinned));
                     }
 
-                    if (!list.isEmpty()) {
-                        adapter = new AnnouncementAdapter(list, false, null);
-                        recyclerView.setAdapter(adapter);
-                        return;
-                    }
+                    adapter = new AnnouncementAdapter(list, false, null);
+                    recyclerView.setAdapter(adapter);
+                    return;
                 } catch (SQLException e) {
                     Log.e("MSSQL_RESIDENT_LOAD", e.getMessage(), e);
                 }
