@@ -82,6 +82,7 @@ public class DocumentOfficialActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
+                startActivity(new Intent(this, OfficialDashboardActivity.class));
                 finish();
                 return true;
             } else if (itemId == R.id.nav_announcements) {
@@ -89,7 +90,9 @@ public class DocumentOfficialActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (itemId == R.id.nav_services) {
-                startActivity(new Intent(this, Service.class));
+                Intent intent = new Intent(this, Service.class);
+                intent.putExtra("IS_OFFICIAL", true);
+                startActivity(intent);
                 finish();
                 return true;
             }

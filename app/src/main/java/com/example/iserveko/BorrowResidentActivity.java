@@ -81,6 +81,9 @@ public class BorrowResidentActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
+                Intent intent = new Intent(this, ResidentDashboardActivity.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_announcements) {
@@ -90,7 +93,9 @@ public class BorrowResidentActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (itemId == R.id.nav_services) {
-                startActivity(new Intent(this, Service.class));
+                Intent intent = new Intent(this, Service.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_notifications) {

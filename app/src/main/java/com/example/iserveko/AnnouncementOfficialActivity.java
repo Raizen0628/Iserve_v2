@@ -70,6 +70,12 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 startActivity(new Intent(this, OfficialDashboardActivity.class));
                 finish();
                 return true;
+            } else if (itemId == R.id.nav_services) {
+                Intent intent = new Intent(this, Service.class);
+                intent.putExtra("IS_OFFICIAL", true);
+                startActivity(intent);
+                finish();
+                return true;
             } else if (itemId == R.id.nav_announcements) {
                 return true;
             }

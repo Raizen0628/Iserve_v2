@@ -75,6 +75,12 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
                 startActivity(intent);
                 finish();
                 return true;
+            } else if (itemId == R.id.nav_services) {
+                Intent intent = new Intent(this, Service.class);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
+                finish();
+                return true;
             } else if (itemId == R.id.nav_notifications) {
                 Intent intent = new Intent(this, NotificationsActivity.class);
                 if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));

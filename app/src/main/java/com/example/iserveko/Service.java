@@ -41,16 +41,24 @@ public class Service extends AppCompatActivity {
         bottomNavigationView.setSelectedItemId(R.id.nav_services);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            boolean isOfficial = getIntent().getBooleanExtra("IS_OFFICIAL", false);
+            String email = getIntent().getStringExtra("EMAIL");
+
             if (itemId == R.id.nav_home) {
+                Intent intent = new Intent(this, isOfficial ? OfficialDashboardActivity.class : ResidentDashboardActivity.class);
+                if (!isOfficial && email != null) intent.putExtra("EMAIL", email);
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_announcements) {
-                // If dashboard was the caller, just finish to go back
+                Intent intent = new Intent(this, isOfficial ? AnnouncementOfficialActivity.class : AnnouncementResidentActivity.class);
+                if (!isOfficial && email != null) intent.putExtra("EMAIL", email);
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_notifications) {
                 Intent intent = new Intent(this, NotificationsActivity.class);
-                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                if (email != null) intent.putExtra("EMAIL", email);
                 startActivity(intent);
                 finish();
                 return true;

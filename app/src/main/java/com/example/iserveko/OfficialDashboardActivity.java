@@ -51,7 +51,9 @@ public class OfficialDashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(this, AnnouncementOfficialActivity.class));
                 return true;
             } else if (itemId == R.id.nav_services) {
-                startActivity(new Intent(this, Service.class));
+                Intent intent = new Intent(this, Service.class);
+                intent.putExtra("IS_OFFICIAL", true);
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_home) {
                 return true;
