@@ -77,23 +77,27 @@ public class DocumentOfficialActivity extends AppCompatActivity {
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        bottomNavigationView.setOnItemSelectedListener(null);
+        bottomNavigationView.setSelectedItemId(R.id.nav_services);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            Class<?> targetClass = null;
             if (itemId == R.id.nav_home) {
-                startActivity(new Intent(this, OfficialDashboardActivity.class));
-                finish();
-                return true;
+                targetClass = OfficialDashboardActivity.class;
             } else if (itemId == R.id.nav_announcements) {
-                startActivity(new Intent(this, AnnouncementOfficialActivity.class));
-                finish();
-                return true;
+                targetClass = AnnouncementOfficialActivity.class;
             } else if (itemId == R.id.nav_services) {
-                Intent intent = new Intent(this, Service.class);
+                targetClass = Service.class;
+            } else if (itemId == R.id.nav_profile) {
+                targetClass = profile.class;
+            }
+
+            if (targetClass != null) {
+                Intent intent = new Intent(this, targetClass);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 intent.putExtra("IS_OFFICIAL", true);
                 startActivity(intent);
-                finish();
                 return true;
             }
             return false;

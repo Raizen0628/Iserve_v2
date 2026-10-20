@@ -2,19 +2,27 @@ package com.example.iserveko;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,6 +60,67 @@ public class MainActivity extends AppCompatActivity {
 
         signupText.setOnClickListener(v ->
                 startActivity(new Intent(MainActivity.this, AccountSetupActivity.class)));
+
+        TextView forgotPasswordText = findViewById(R.id.forgotPasswordText);
+        forgotPasswordText.setOnClickListener(v -> showForgotPasswordDialog());
+    }
+
+    private void showForgotPasswordDialog() {
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+
+        final EditText inputEmail = new EditText(this);
+        inputEmail.setHint("Enter your registered email");
+        inputEmail.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS | android.text.InputType.TYPE_CLASS_TEXT);
+        layout.addView(inputEmail);
+
+        final EditText inputNewPass = new EditText(this);
+        inputNewPass.setHint("Enter New Password");
+        inputNewPass.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD | android.text.InputType.TYPE_CLASS_TEXT);
+        layout.addView(inputNewPass);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Forgot Password")
+                .setMessage("Enter your registered email and your new password to reset:")
+                .setView(layout)
+                .setPositiveButton("Reset Password", (dialog, which) -> {
+                    String email = inputEmail.getText().toString().trim();
+                    String newPass = inputNewPass.getText().toString().trim();
+
+                    if (email.isEmpty() || newPass.isEmpty()) {
+                        Toast.makeText(this, "Please fill in all fields.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (databaseHelper.checkEmailExists(email)) {
+                        databaseHelper.updatePassword(email, newPass);
+                        updatePasswordOnMSSQL(email, newPass);
+                        Toast.makeText(this, "Password reset successful! You can now log in.", Toast.LENGTH_LONG).show();
+                    } else {
+                        updatePasswordOnMSSQL(email, newPass);
+                        Toast.makeText(this, "Password reset request processed.", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void updatePasswordOnMSSQL(String email, String newPass) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        executor.execute(() -> {
+            try {
+                Connection con = connect_sql.getConnection();
+                if (con != null) {
+                    Statement stmt = con.createStatement();
+                    stmt.executeUpdate("UPDATE users SET password = '" + newPass.replace("'", "''") + "' WHERE email = '" + email.replace("'", "''") + "'");
+                }
+            } catch (Exception e) {
+                Log.e("MSSQL_FORGOT_ERR", e.getMessage(), e);
+            }
+        });
     }
 
     private void loginUser(String username, String password) {
@@ -96,6 +165,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void navigateToDashboard(String username, String role) {
+        getSharedPreferences("UserSession", MODE_PRIVATE)
+                .edit()
+                .putString("logged_in_email", username)
+                .putBoolean("is_official", "Barangay Official".equals(role))
+                .apply();
+
         if (role == null || role.isEmpty() || "null".equals(role)) {
             Intent intent = new Intent(this, AccountSetupActivity.class);
             intent.putExtra("EMAIL", username);

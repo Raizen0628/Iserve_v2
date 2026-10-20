@@ -29,6 +29,14 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
     private AnnouncementAdapter adapter;
     private EditText inputSearch;
 
+    private String getCurrentEmail() {
+        if (getIntent().hasExtra("EMAIL") && getIntent().getStringExtra("EMAIL") != null) {
+            return getIntent().getStringExtra("EMAIL");
+        }
+        return getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE)
+                .getString("logged_in_email", "resident@iserveko.com");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,29 +73,30 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
+        bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_announcements);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            if (itemId == R.id.nav_announcements) {
+                return true;
+            }
+            Class<?> targetClass = null;
             if (itemId == R.id.nav_home) {
-                Intent intent = new Intent(this, ResidentDashboardActivity.class);
-                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
-                startActivity(intent);
-                finish();
-                return true;
+                targetClass = ResidentDashboardActivity.class;
             } else if (itemId == R.id.nav_services) {
-                Intent intent = new Intent(this, Service.class);
-                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
-                startActivity(intent);
-                finish();
-                return true;
+                targetClass = Service.class;
             } else if (itemId == R.id.nav_notifications) {
-                Intent intent = new Intent(this, NotificationsActivity.class);
-                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                targetClass = NotificationsActivity.class;
+            } else if (itemId == R.id.nav_profile) {
+                targetClass = profile.class;
+            }
+
+            if (targetClass != null) {
+                Intent intent = new Intent(this, targetClass);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                intent.putExtra("EMAIL", getCurrentEmail());
                 startActivity(intent);
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_announcements) {
                 return true;
             }
             return false;

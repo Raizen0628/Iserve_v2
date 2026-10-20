@@ -30,7 +30,7 @@ public class connect_sql {
     public static Connection getConnection() {
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            DriverManager.setLoginTimeout(15);
+            DriverManager.setLoginTimeout(3);
         } catch (Exception e) {
             Log.e("MSSQL_DRIVER_ERROR", "jTDS Driver missing or error: " + e.getMessage());
             return null;
@@ -38,12 +38,9 @@ public class connect_sql {
 
         String base = "jdbc:jtds:sqlserver://" + SERVER + ":" + PORT + "/" + DB;
 
-        // Same server, different SSL modes. The password is not put in the URL, so it is not logged.
         String[] urlsToTry = {
                 base,
-                base + ";ssl=request",
-                base + ";ssl=require",
-                base + ";useNTLMv2=true;ssl=request"
+                base + ";ssl=request"
         };
 
         for (String url : urlsToTry) {

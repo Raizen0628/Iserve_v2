@@ -1,5 +1,6 @@
 package com.example.iserveko;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -86,7 +87,14 @@ public class OfficialSignupActivity extends AppCompatActivity {
             // 1. Save locally in SQLite Database
             databaseHelper.addOfficial(firstName, middleName, lastName, email, mobile, position, password);
 
-            // 2. Insert into MSSQL Database
+            // 2. Save Session
+            getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+                    .edit()
+                    .putString("logged_in_email", email)
+                    .putBoolean("is_official", true)
+                    .apply();
+
+            // 3. Insert into MSSQL Database and navigate to Official Dashboard
             registerOfficialOnMSSQL(firstName, lastName, email, password);
         });
     }
@@ -99,38 +107,23 @@ public class OfficialSignupActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String insertQuery = "INSERT INTO users (first_name, last_name, email, password, role) VALUES ('"
-                            + first + "', '" + last + "', '" + email + "', '" + password + "', 'Barangay Official')";
+                    String insertQuery = "INSERT INTO users (first_name, last_name, email, password, role, position) VALUES ('"
+                            + first + "', '" + last + "', '" + email + "', '" + password + "', 'Barangay Official', 'Official')";
 
                     Statement stmt = con.createStatement();
                     stmt.executeUpdate(insertQuery);
-
-                    handler.post(() -> {
-                        Toast.makeText(OfficialSignupActivity.this, "Official Registered in MSSQL!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(OfficialSignupActivity.this, MainActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                        startActivity(intent);
-                        finish();
-                    });
-                } else {
-                    handler.post(() -> {
-                        Toast.makeText(OfficialSignupActivity.this, "MSSQL Connection Failed. Saved Locally.", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(OfficialSignupActivity.this, MainActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                        startActivity(intent);
-                        finish();
-                    });
                 }
             } catch (Exception e) {
-                Log.e("MSSQL_REGISTER_ERROR", e.getMessage(), e);
-                handler.post(() -> {
-                    Toast.makeText(OfficialSignupActivity.this, "MSSQL Insert Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    Intent intent = new Intent(OfficialSignupActivity.this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                    finish();
-                });
+                Log.e("MSSQL_OFFICIAL_REGISTER", e.getMessage(), e);
             }
+            handler.post(() -> {
+                Toast.makeText(OfficialSignupActivity.this, "Official Registration Successful!", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(OfficialSignupActivity.this, OfficialDashboardActivity.class);
+                intent.putExtra("EMAIL", email);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            });
         });
     }
 }

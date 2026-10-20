@@ -1,5 +1,6 @@
 package com.example.iserveko;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -26,6 +27,11 @@ public class Service extends AppCompatActivity {
             return insets;
         });
 
+        boolean isOfficial = getIntent().hasExtra("IS_OFFICIAL") ? getIntent().getBooleanExtra("IS_OFFICIAL", false) :
+                getSharedPreferences("UserSession", Context.MODE_PRIVATE).getBoolean("is_official", false);
+        String email = getIntent().hasExtra("EMAIL") && getIntent().getStringExtra("EMAIL") != null ? getIntent().getStringExtra("EMAIL") :
+                getSharedPreferences("UserSession", Context.MODE_PRIVATE).getString("logged_in_email", "resident@iserveko.com");
+
         // Back Button
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -36,33 +42,39 @@ public class Service extends AppCompatActivity {
         setupDialerCard(R.id.cardHealthCenter, R.string.contact_health);
         setupDialerCard(R.id.cardBarangayHall, R.string.contact_hall);
 
+        findViewById(R.id.cardMeetingRequest).setOnClickListener(v -> {
+            Intent intent = new Intent(this, MeetingRequestActivity.class);
+            intent.putExtra("EMAIL", email);
+            intent.putExtra("IS_OFFICIAL", isOfficial);
+            startActivity(intent);
+        });
+
         // Bottom Navigation
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
+        bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_services);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
-            boolean isOfficial = getIntent().getBooleanExtra("IS_OFFICIAL", false);
-            String email = getIntent().getStringExtra("EMAIL");
-
+            if (itemId == R.id.nav_services) {
+                return true;
+            }
+            Class<?> targetClass = null;
             if (itemId == R.id.nav_home) {
-                Intent intent = new Intent(this, isOfficial ? OfficialDashboardActivity.class : ResidentDashboardActivity.class);
-                if (!isOfficial && email != null) intent.putExtra("EMAIL", email);
-                startActivity(intent);
-                finish();
-                return true;
+                targetClass = isOfficial ? OfficialDashboardActivity.class : ResidentDashboardActivity.class;
             } else if (itemId == R.id.nav_announcements) {
-                Intent intent = new Intent(this, isOfficial ? AnnouncementOfficialActivity.class : AnnouncementResidentActivity.class);
-                if (!isOfficial && email != null) intent.putExtra("EMAIL", email);
-                startActivity(intent);
-                finish();
-                return true;
+                targetClass = isOfficial ? AnnouncementOfficialActivity.class : AnnouncementResidentActivity.class;
             } else if (itemId == R.id.nav_notifications) {
-                Intent intent = new Intent(this, NotificationsActivity.class);
-                if (email != null) intent.putExtra("EMAIL", email);
+                targetClass = NotificationsActivity.class;
+            } else if (itemId == R.id.nav_profile) {
+                targetClass = profile.class;
+            }
+
+            if (targetClass != null) {
+                Intent intent = new Intent(this, targetClass);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                intent.putExtra("EMAIL", email);
+                intent.putExtra("IS_OFFICIAL", isOfficial);
                 startActivity(intent);
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_services) {
                 return true;
             }
             return false;
