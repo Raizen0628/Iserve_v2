@@ -33,6 +33,8 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
         if ("DOCUMENT".equalsIgnoreCase(item.getType())) {
             holder.txtNotifIcon.setText("📄");
+        } else if ("MEETING".equalsIgnoreCase(item.getType())) {
+            holder.txtNotifIcon.setText("📅");
         } else {
             holder.txtNotifIcon.setText("🪑");
         }

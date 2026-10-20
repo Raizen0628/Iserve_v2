@@ -12,7 +12,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "IServeKo.db";
-    private static final int DATABASE_VERSION = 9;
+    private static final int DATABASE_VERSION = 10;
 
     // Users table
     private static final String TABLE_USERS = "users";
@@ -69,6 +69,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_DOC_DATE = "request_date";
     private static final String COLUMN_DOC_REMARKS = "remarks";
 
+    // Meeting Requests table
+    private static final String TABLE_MEETING_REQUESTS = "meeting_requests";
+    private static final String COLUMN_MEET_ID = "id";
+    private static final String COLUMN_MEET_EMAIL = "resident_email";
+    private static final String COLUMN_MEET_NAME = "resident_name";
+    private static final String COLUMN_MEET_DATE = "meeting_date";
+    private static final String COLUMN_MEET_TIME = "meeting_time";
+    private static final String COLUMN_MEET_PURPOSE = "purpose";
+    private static final String COLUMN_MEET_STATUS = "status";
+    private static final String COLUMN_MEET_REQ_DATE = "request_date";
+    private static final String COLUMN_MEET_REMARKS = "remarks";
+
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -79,6 +91,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         createAnnouncementsTable(db);
         createBorrowTables(db);
         createDocumentRequestsTable(db);
+        createMeetingRequestsTable(db);
         seedDefaultUsers(db);
         seedDefaultAnnouncements(db);
         seedBorrowInventory(db);
@@ -198,6 +211,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_DOC_TABLE);
     }
 
+    private void createMeetingRequestsTable(SQLiteDatabase db) {
+        String CREATE_MEETING_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MEETING_REQUESTS + "("
+                + COLUMN_MEET_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_MEET_EMAIL + " TEXT NOT NULL,"
+                + COLUMN_MEET_NAME + " TEXT NOT NULL,"
+                + COLUMN_MEET_DATE + " TEXT NOT NULL,"
+                + COLUMN_MEET_TIME + " TEXT NOT NULL,"
+                + COLUMN_MEET_PURPOSE + " TEXT NOT NULL,"
+                + COLUMN_MEET_STATUS + " TEXT DEFAULT 'Pending',"
+                + COLUMN_MEET_REQ_DATE + " TEXT NOT NULL,"
+                + COLUMN_MEET_REMARKS + " TEXT)";
+        db.execSQL(CREATE_MEETING_TABLE);
+    }
+
     private void seedBorrowInventory(SQLiteDatabase db) {
         Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_BORROW_INVENTORY, null);
         if (cursor != null) {
@@ -223,6 +250,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         createUsersTable(db);
         createAnnouncementsTable(db);
         createBorrowTables(db);
+        createDocumentRequestsTable(db);
+        createMeetingRequestsTable(db);
         seedDefaultUsers(db);
         seedDefaultAnnouncements(db);
         seedBorrowInventory(db);
@@ -293,6 +322,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             cursor.close();
         }
         return role;
+    }
+
+    public boolean updatePassword(String email, String newPassword) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        createUsersTable(db);
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PASSWORD, newPassword);
+        int rows = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", new String[]{email});
+        return rows > 0;
+    }
+
+    public boolean checkEmailExists(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        createUsersTable(db);
+        Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_EMAIL}, COLUMN_EMAIL + " = ?", new String[]{email}, null, null, null);
+        boolean exists = (cursor != null && cursor.getCount() > 0);
+        if (cursor != null) cursor.close();
+        return exists;
     }
 
     // --- ANNOUNCEMENTS MANAGEMENT ---
@@ -383,6 +430,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             cursor.close();
         }
         return new int[]{availTables, availChairs};
+    }
+
+    public void updateInventoryStock(int addTables, int addChairs) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        createBorrowTables(db);
+        seedBorrowInventory(db);
+
+        db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " + " + addTables + ", " + COLUMN_INV_TOTAL + " = " + COLUMN_INV_TOTAL + " + " + addTables + " WHERE item_name = 'Table'");
+        db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " + " + addChairs + ", " + COLUMN_INV_TOTAL + " = " + COLUMN_INV_TOTAL + " + " + addChairs + " WHERE item_name = 'Chair'");
     }
 
     public boolean addBorrowRequest(String residentEmail, String residentName, int tables, int chairs,
@@ -628,6 +684,93 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         int rows = db.update(TABLE_DOC_REQUESTS, values, COLUMN_DOC_ID + " = ?", new String[]{String.valueOf(id)});
+        return rows > 0;
+    }
+
+    public boolean addMeetingRequest(String residentEmail, String residentName, String meetingDate,
+                                      String meetingTime, String purpose, String requestDate) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        createMeetingRequestsTable(db);
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_MEET_EMAIL, residentEmail);
+        values.put(COLUMN_MEET_NAME, residentName);
+        values.put(COLUMN_MEET_DATE, meetingDate);
+        values.put(COLUMN_MEET_TIME, meetingTime);
+        values.put(COLUMN_MEET_PURPOSE, purpose);
+        values.put(COLUMN_MEET_STATUS, "Pending");
+        values.put(COLUMN_MEET_REQ_DATE, requestDate);
+        values.put(COLUMN_MEET_REMARKS, "");
+
+        long result = db.insert(TABLE_MEETING_REQUESTS, null, values);
+        return result != -1;
+    }
+
+    public List<MeetingRequest> getMeetingRequestsForResident(String email) {
+        List<MeetingRequest> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        createMeetingRequestsTable(db);
+
+        String query = "SELECT * FROM " + TABLE_MEETING_REQUESTS + " WHERE " + COLUMN_MEET_EMAIL + " = ? ORDER BY id DESC";
+        Cursor cursor = db.rawQuery(query, new String[]{email});
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_MEET_ID));
+                String resEmail = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_EMAIL));
+                String resName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_NAME));
+                String meetDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_DATE));
+                String meetTime = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_TIME));
+                String purpose = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_PURPOSE));
+                String status = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_STATUS));
+                String reqDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_REQ_DATE));
+                String remarks = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_REMARKS));
+
+                list.add(new MeetingRequest(id, resEmail, resName, meetDate, meetTime, purpose, status, reqDate, remarks));
+            }
+            cursor.close();
+        }
+        return list;
+    }
+
+    public List<MeetingRequest> getAllMeetingRequests() {
+        List<MeetingRequest> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        createMeetingRequestsTable(db);
+
+        String query = "SELECT * FROM " + TABLE_MEETING_REQUESTS + " ORDER BY id DESC";
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_MEET_ID));
+                String resEmail = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_EMAIL));
+                String resName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_NAME));
+                String meetDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_DATE));
+                String meetTime = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_TIME));
+                String purpose = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_PURPOSE));
+                String status = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_STATUS));
+                String reqDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_REQ_DATE));
+                String remarks = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEET_REMARKS));
+
+                list.add(new MeetingRequest(id, resEmail, resName, meetDate, meetTime, purpose, status, reqDate, remarks));
+            }
+            cursor.close();
+        }
+        return list;
+    }
+
+    public boolean updateMeetingRequestStatus(int id, String newStatus, String remarks) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        createMeetingRequestsTable(db);
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_MEET_STATUS, newStatus);
+        if (remarks != null) {
+            values.put(COLUMN_MEET_REMARKS, remarks);
+        }
+
+        int rows = db.update(TABLE_MEETING_REQUESTS, values, COLUMN_MEET_ID + " = ?", new String[]{String.valueOf(id)});
         return rows > 0;
     }
 }

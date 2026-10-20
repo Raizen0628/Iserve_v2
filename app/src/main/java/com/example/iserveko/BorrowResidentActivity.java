@@ -1,5 +1,6 @@
 package com.example.iserveko;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -63,6 +64,9 @@ public class BorrowResidentActivity extends AppCompatActivity {
 
         if (getIntent().hasExtra("EMAIL")) {
             residentEmail = getIntent().getStringExtra("EMAIL");
+        } else {
+            residentEmail = getSharedPreferences("UserSession", MODE_PRIVATE)
+                    .getString("logged_in_email", "resident@iserveko.com");
         }
         if (getIntent().hasExtra("NAME")) {
             residentName = getIntent().getStringExtra("NAME");
@@ -76,28 +80,29 @@ public class BorrowResidentActivity extends AppCompatActivity {
         findViewById(R.id.btnNewBorrowRequest).setOnClickListener(v -> showCreateRequestDialog());
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        bottomNavigationView.setOnItemSelectedListener(null);
+        bottomNavigationView.setSelectedItemId(R.id.nav_services);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            if (itemId == R.id.nav_services) {
+                return true;
+            }
+            Intent intent = null;
             if (itemId == R.id.nav_home) {
-                finish();
-                return true;
+                intent = new Intent(this, ResidentDashboardActivity.class);
             } else if (itemId == R.id.nav_announcements) {
-                Intent intent = new Intent(this, AnnouncementResidentActivity.class);
-                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
-                startActivity(intent);
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_services) {
-                startActivity(new Intent(this, Service.class));
-                finish();
-                return true;
+                intent = new Intent(this, AnnouncementResidentActivity.class);
             } else if (itemId == R.id.nav_notifications) {
-                Intent intent = new Intent(this, NotificationsActivity.class);
+                intent = new Intent(this, NotificationsActivity.class);
+            } else if (itemId == R.id.nav_profile) {
+                intent = new Intent(this, profile.class);
+            }
+
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
                 startActivity(intent);
-                finish();
                 return true;
             }
             return false;
@@ -252,10 +257,15 @@ public class BorrowResidentActivity extends AppCompatActivity {
     private void showCreateRequestDialog() {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_borrow_request, null);
         TextView txtStock = view.findViewById(R.id.txtDialogAvailableStock);
+        EditText inputBorrowerName = view.findViewById(R.id.inputBorrowerName);
+        EditText inputBorrowerEmail = view.findViewById(R.id.inputBorrowerEmail);
         EditText inputTables = view.findViewById(R.id.inputTablesCount);
         EditText inputChairs = view.findViewById(R.id.inputChairsCount);
         EditText inputBorrowDate = view.findViewById(R.id.inputBorrowDate);
         EditText inputPurpose = view.findViewById(R.id.inputPurpose);
+
+        inputBorrowerName.setText(residentName);
+        inputBorrowerEmail.setText(residentEmail);
 
         txtStock.setText("Available: 🪑 " + availableTables + " Tables | 🪑 " + availableChairs + " Chairs");
 
@@ -265,10 +275,20 @@ public class BorrowResidentActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setView(view)
                 .setPositiveButton("Submit Request", (dialog, which) -> {
+                    String nameStr = inputBorrowerName.getText().toString().trim();
+                    String emailStr = inputBorrowerEmail.getText().toString().trim();
                     String tablesStr = inputTables.getText().toString().trim();
                     String chairsStr = inputChairs.getText().toString().trim();
                     String borrowDate = inputBorrowDate.getText().toString().trim();
                     String purpose = inputPurpose.getText().toString().trim();
+
+                    if (nameStr.isEmpty() || emailStr.isEmpty()) {
+                        Toast.makeText(this, "Please enter your name and email.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    residentName = nameStr;
+                    residentEmail = emailStr;
 
                     int tables = tablesStr.isEmpty() ? 0 : Integer.parseInt(tablesStr);
                     int chairs = chairsStr.isEmpty() ? 0 : Integer.parseInt(chairsStr);
@@ -420,5 +440,9 @@ public class BorrowResidentActivity extends AppCompatActivity {
                 loadInventoryAndRequests();
             });
         });
+    }
+
+    private void goBackToDashboard() {
+        finish();
     }
 }

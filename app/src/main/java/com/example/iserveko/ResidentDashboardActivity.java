@@ -1,5 +1,6 @@
 package com.example.iserveko;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +23,14 @@ public class ResidentDashboardActivity extends AppCompatActivity {
     private DatabaseHelper databaseHelper;
     private TextView txtDashAnnTitle, txtDashAnnDate, txtDashAnnDesc;
 
+    private String getCurrentEmail() {
+        if (getIntent().hasExtra("EMAIL") && getIntent().getStringExtra("EMAIL") != null) {
+            return getIntent().getStringExtra("EMAIL");
+        }
+        return getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+                .getString("logged_in_email", "resident@iserveko.com");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,7 +49,11 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         txtDashAnnDate = findViewById(R.id.txtDashAnnDate);
         txtDashAnnDesc = findViewById(R.id.txtDashAnnDesc);
 
-        Runnable openAnnouncements = () -> startActivity(new Intent(this, AnnouncementResidentActivity.class));
+        Runnable openAnnouncements = () -> {
+            Intent intent = new Intent(this, AnnouncementResidentActivity.class);
+            intent.putExtra("EMAIL", getCurrentEmail());
+            startActivity(intent);
+        };
 
         findViewById(R.id.cardAnnouncement).setOnClickListener(v -> openAnnouncements.run());
         findViewById(R.id.cardDashAnnouncementPreview).setOnClickListener(v -> openAnnouncements.run());
@@ -48,42 +61,61 @@ public class ResidentDashboardActivity extends AppCompatActivity {
 
         findViewById(R.id.cardClearance).setOnClickListener(v -> {
             Intent intent = new Intent(this, DocumentRequestActivity.class);
-            if (getIntent().hasExtra("EMAIL")) {
-                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
-            }
+            intent.putExtra("EMAIL", getCurrentEmail());
             startActivity(intent);
         });
 
         findViewById(R.id.cardEmergency).setOnClickListener(v -> {
-            startActivity(new Intent(this, Service.class));
+            Intent intent = new Intent(this, Service.class);
+            intent.putExtra("EMAIL", getCurrentEmail());
+            startActivity(intent);
         });
 
         findViewById(R.id.cardBorrowTablesChairs).setOnClickListener(v -> {
             Intent intent = new Intent(this, BorrowResidentActivity.class);
-            if (getIntent().hasExtra("EMAIL")) {
-                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
-            }
+            intent.putExtra("EMAIL", getCurrentEmail());
+            startActivity(intent);
+        });
+
+        findViewById(R.id.cardEvents).setOnClickListener(v -> {
+            Intent intent = new Intent(this, CalendarActivity.class);
+            intent.putExtra("EMAIL", getCurrentEmail());
+            intent.putExtra("IS_OFFICIAL", false);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.cardMeetingRequest).setOnClickListener(v -> {
+            Intent intent = new Intent(this, MeetingRequestActivity.class);
+            intent.putExtra("EMAIL", getCurrentEmail());
+            intent.putExtra("IS_OFFICIAL", false);
             startActivity(intent);
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
+        bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                return true;
+            }
+            Intent intent = null;
             if (itemId == R.id.nav_announcements) {
-                Intent intent = new Intent(this, AnnouncementResidentActivity.class);
-                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
-                startActivity(intent);
-                return true;
+                intent = new Intent(this, AnnouncementResidentActivity.class);
             } else if (itemId == R.id.nav_services) {
-                startActivity(new Intent(this, Service.class));
-                return true;
+                intent = new Intent(this, Service.class);
             } else if (itemId == R.id.nav_notifications) {
-                Intent intent = new Intent(this, NotificationsActivity.class);
-                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                intent = new Intent(this, NotificationsActivity.class);
+            } else if (itemId == R.id.nav_profile) {
+                intent = new Intent(this, profile.class);
+                intent.putExtra("IS_OFFICIAL", false);
+            }
+
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                intent.putExtra("EMAIL", getCurrentEmail());
                 startActivity(intent);
-                return true;
-            } else if (itemId == R.id.nav_home) {
+                overridePendingTransition(0, 0);
                 return true;
             }
             return false;

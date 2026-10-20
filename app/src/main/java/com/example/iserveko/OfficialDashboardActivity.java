@@ -43,17 +43,39 @@ public class OfficialDashboardActivity extends AppCompatActivity {
 
         findViewById(R.id.cardPendingRequests).setOnClickListener(v -> showPendingRequestsTypeDialog());
 
+        findViewById(R.id.cardEvents).setOnClickListener(v -> {
+            Intent intent = new Intent(this, CalendarActivity.class);
+            if (getIntent().hasExtra("EMAIL")) {
+                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+            }
+            intent.putExtra("IS_OFFICIAL", true);
+            startActivity(intent);
+        });
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
+        bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
-            if (itemId == R.id.nav_announcements) {
-                startActivity(new Intent(this, AnnouncementOfficialActivity.class));
+            if (itemId == R.id.nav_home) {
+                return true;
+            } else if (itemId == R.id.nav_announcements) {
+                Intent intent = new Intent(this, AnnouncementOfficialActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_services) {
-                startActivity(new Intent(this, Service.class));
+                Intent intent = new Intent(this, Service.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                intent.putExtra("IS_OFFICIAL", true);
+                startActivity(intent);
                 return true;
-            } else if (itemId == R.id.nav_home) {
+            } else if (itemId == R.id.nav_profile) {
+                Intent intent = new Intent(this, profile.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                intent.putExtra("IS_OFFICIAL", true);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                startActivity(intent);
                 return true;
             }
             return false;
@@ -63,7 +85,7 @@ public class OfficialDashboardActivity extends AppCompatActivity {
     }
 
     private void showPendingRequestsTypeDialog() {
-        String[] options = {"📄 Document Requests (Clearances & Certificates)", "🪑 Equipment Borrowing (Tables & Chairs)"};
+        String[] options = {"📄 Document Requests (Clearances & Certificates)", "🪑 Equipment Borrowing (Tables & Chairs)", "📅 Meeting Requests"};
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Manage Pending Requests")
                 .setItems(options, (dialog, which) -> {
@@ -71,6 +93,10 @@ public class OfficialDashboardActivity extends AppCompatActivity {
                         startActivity(new Intent(this, DocumentOfficialActivity.class));
                     } else if (which == 1) {
                         startActivity(new Intent(this, BorrowOfficialActivity.class));
+                    } else if (which == 2) {
+                        Intent intent = new Intent(this, MeetingRequestActivity.class);
+                        intent.putExtra("IS_OFFICIAL", true);
+                        startActivity(intent);
                     }
                 })
                 .setNegativeButton("Cancel", null)

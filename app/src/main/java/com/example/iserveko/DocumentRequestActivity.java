@@ -1,5 +1,7 @@
 package com.example.iserveko;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -83,6 +85,9 @@ public class DocumentRequestActivity extends AppCompatActivity {
 
         if (getIntent().hasExtra("EMAIL")) {
             residentEmail = getIntent().getStringExtra("EMAIL");
+        } else {
+            residentEmail = getSharedPreferences("UserSession", MODE_PRIVATE)
+                    .getString("logged_in_email", "resident@iserveko.com");
         }
 
         initViews();
@@ -94,6 +99,8 @@ public class DocumentRequestActivity extends AppCompatActivity {
         loadUserProfile();
         loadMyDocumentRequests();
     }
+
+
 
     private RecyclerView recyclerViewMyDocRequests;
     private DocumentAdapter adapter;

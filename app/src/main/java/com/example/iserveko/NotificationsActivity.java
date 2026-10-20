@@ -47,6 +47,9 @@ public class NotificationsActivity extends AppCompatActivity {
 
         if (getIntent().hasExtra("EMAIL")) {
             residentEmail = getIntent().getStringExtra("EMAIL");
+        } else {
+            residentEmail = getSharedPreferences("UserSession", MODE_PRIVATE)
+                    .getString("logged_in_email", "resident@iserveko.com");
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -56,29 +59,30 @@ public class NotificationsActivity extends AppCompatActivity {
         recyclerViewNotifications.setLayoutManager(new LinearLayoutManager(this));
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
+        bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_notifications);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            if (itemId == R.id.nav_notifications) {
+                return true;
+            }
+            Class<?> targetClass = null;
             if (itemId == R.id.nav_home) {
-                Intent intent = new Intent(this, ResidentDashboardActivity.class);
-                intent.putExtra("EMAIL", residentEmail);
-                startActivity(intent);
-                finish();
-                return true;
+                targetClass = ResidentDashboardActivity.class;
             } else if (itemId == R.id.nav_announcements) {
-                Intent intent = new Intent(this, AnnouncementResidentActivity.class);
-                intent.putExtra("EMAIL", residentEmail);
-                startActivity(intent);
-                finish();
-                return true;
+                targetClass = AnnouncementResidentActivity.class;
             } else if (itemId == R.id.nav_services) {
-                Intent intent = new Intent(this, Service.class);
+                targetClass = Service.class;
+            } else if (itemId == R.id.nav_profile) {
+                targetClass = profile.class;
+            }
+
+            if (targetClass != null) {
+                Intent intent = new Intent(this, targetClass);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 intent.putExtra("EMAIL", residentEmail);
                 startActivity(intent);
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_notifications) {
                 return true;
             }
             return false;
@@ -172,7 +176,7 @@ public class NotificationsActivity extends AppCompatActivity {
                 } catch (SQLException e) {
                     Log.e("MSSQL_BORROW_NOTIF_ERR", e.getMessage(), e);
                 }
-                displayNotifications(notificationItems);
+                loadMeetingNotificationsAndBind(notificationItems);
             }
 
             @Override
@@ -189,6 +193,57 @@ public class NotificationsActivity extends AppCompatActivity {
                                 br.getRequestDate(),
                                 details,
                                 br.getRemarks()
+                        ));
+                    }
+                }
+                loadMeetingNotificationsAndBind(notificationItems);
+            }
+        });
+    }
+
+    private void loadMeetingNotificationsAndBind(List<NotificationItem> notificationItems) {
+        String meetingQuery = "SELECT * FROM meeting_requests WHERE resident_email = '" + residentEmail.replace("'", "''") + "' ORDER BY id DESC";
+        connect_sql.executeQueryAsync(meetingQuery, new connect_sql.QueryCallback() {
+            @Override
+            public void onSuccess(ResultSet rs) {
+                try {
+                    while (rs != null && rs.next()) {
+                        String meetDate = rs.getString("meeting_date");
+                        String meetTime = rs.getString("meeting_time");
+                        String purpose = rs.getString("purpose");
+                        String status = rs.getString("status");
+                        String date = rs.getString("request_date");
+                        String remarks = rs.getString("remarks");
+
+                        String details = "Meeting Date: " + meetDate + " at " + meetTime + "\nPurpose: " + purpose;
+                        notificationItems.add(new NotificationItem(
+                                "Meeting Schedule Request",
+                                "MEETING",
+                                status != null ? status : "Pending",
+                                date != null ? date : "",
+                                details,
+                                remarks
+                        ));
+                    }
+                } catch (SQLException e) {
+                    Log.e("MSSQL_MEET_NOTIF_ERR", e.getMessage(), e);
+                }
+                displayNotifications(notificationItems);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                List<MeetingRequest> localMeetings = databaseHelper.getMeetingRequestsForResident(residentEmail);
+                if (localMeetings != null) {
+                    for (MeetingRequest mr : localMeetings) {
+                        String details = "Meeting Date: " + mr.getMeetingDate() + " at " + mr.getMeetingTime() + "\nPurpose: " + mr.getPurpose();
+                        notificationItems.add(new NotificationItem(
+                                "Meeting Schedule Request",
+                                "MEETING",
+                                mr.getStatus(),
+                                mr.getRequestDate(),
+                                details,
+                                mr.getRemarks()
                         ));
                     }
                 }

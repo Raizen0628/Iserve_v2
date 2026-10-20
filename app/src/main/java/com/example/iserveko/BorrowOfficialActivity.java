@@ -62,6 +62,7 @@ public class BorrowOfficialActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        findViewById(R.id.btnAddStock).setOnClickListener(v -> showAddStockDialog());
 
         chipGroupStatus.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.contains(R.id.chipPending)) {
@@ -82,20 +83,27 @@ public class BorrowOfficialActivity extends AppCompatActivity {
         });
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        bottomNavigationView.setOnItemSelectedListener(null);
+        bottomNavigationView.setSelectedItemId(R.id.nav_services);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            Class<?> targetClass = null;
             if (itemId == R.id.nav_home) {
-                finish();
-                return true;
+                targetClass = OfficialDashboardActivity.class;
             } else if (itemId == R.id.nav_announcements) {
-                startActivity(new Intent(this, AnnouncementOfficialActivity.class));
-                finish();
-                return true;
+                targetClass = AnnouncementOfficialActivity.class;
             } else if (itemId == R.id.nav_services) {
-                startActivity(new Intent(this, Service.class));
-                finish();
+                targetClass = Service.class;
+            } else if (itemId == R.id.nav_profile) {
+                targetClass = profile.class;
+            }
+
+            if (targetClass != null) {
+                Intent intent = new Intent(this, targetClass);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                intent.putExtra("IS_OFFICIAL", true);
+                startActivity(intent);
                 return true;
             }
             return false;
@@ -353,6 +361,73 @@ public class BorrowOfficialActivity extends AppCompatActivity {
             }
             handler.post(() -> {
                 Toast.makeText(BorrowOfficialActivity.this, "Items marked as returned to inventory!", Toast.LENGTH_SHORT).show();
+                loadInventoryAndRequests();
+            });
+        });
+    }
+
+    private void showAddStockDialog() {
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+
+        final EditText inputTables = new EditText(this);
+        inputTables.setHint("Additional Tables to Add");
+        inputTables.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        layout.addView(inputTables);
+
+        final EditText inputChairs = new EditText(this);
+        inputChairs.setHint("Additional Chairs to Add");
+        inputChairs.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        layout.addView(inputChairs);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Add Equipment Stock")
+                .setMessage("Enter the quantity of tables and chairs to add to inventory:")
+                .setView(layout)
+                .setPositiveButton("Add Stock", (dialog, which) -> {
+                    String tablesStr = inputTables.getText().toString().trim();
+                    String chairsStr = inputChairs.getText().toString().trim();
+
+                    int addTables = tablesStr.isEmpty() ? 0 : Integer.parseInt(tablesStr);
+                    int addChairs = chairsStr.isEmpty() ? 0 : Integer.parseInt(chairsStr);
+
+                    if (addTables <= 0 && addChairs <= 0) {
+                        Toast.makeText(this, "Please enter at least 1 table or chair to add.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // SQLite local update
+                    databaseHelper.updateInventoryStock(addTables, addChairs);
+
+                    // MSSQL update
+                    addStockToMSSQL(addTables, addChairs);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void addStockToMSSQL(int addTables, int addChairs) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        executor.execute(() -> {
+            try {
+                Connection con = connect_sql.getConnection();
+                if (con != null) {
+                    Statement stmt = con.createStatement();
+                    stmt.executeUpdate("IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'borrow_inventory') "
+                            + "BEGIN CREATE TABLE borrow_inventory (item_name VARCHAR(50) PRIMARY KEY, total_quantity INT NOT NULL, available_quantity INT NOT NULL); "
+                            + "INSERT INTO borrow_inventory VALUES ('Table', 20, 20), ('Chair', 150, 150); END");
+
+                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + addTables + ", total_quantity = total_quantity + " + addTables + " WHERE item_name = 'Table'");
+                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + addChairs + ", total_quantity = total_quantity + " + addChairs + " WHERE item_name = 'Chair'");
+                }
+            } catch (Exception e) {
+                Log.e("MSSQL_ADD_STOCK_ERR", e.getMessage(), e);
+            }
+            handler.post(() -> {
+                Toast.makeText(BorrowOfficialActivity.this, "Successfully added stock to inventory!", Toast.LENGTH_SHORT).show();
                 loadInventoryAndRequests();
             });
         });
