@@ -1,13 +1,14 @@
 package com.example.iserveko;
 
-import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewParent;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -32,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -254,6 +259,32 @@ public class BorrowResidentActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
+    // Finds the TextInputLayout that wraps a TextInputEditText
+    private TextInputLayout findInputLayout(View editText) {
+        ViewParent parent = editText.getParent();
+        while (parent != null) {
+            if (parent instanceof TextInputLayout) {
+                return (TextInputLayout) parent;
+            }
+            parent = parent.getParent();
+        }
+        return null;
+    }
+
+    private void openDatePicker(EditText target) {
+        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText("Select date needed")
+                .build();
+
+        picker.addOnPositiveButtonClickListener(selection -> {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC")); // picker returns UTC millis
+            target.setText(sdf.format(new Date(selection)));
+        });
+
+        picker.show(getSupportFragmentManager(), "BORROW_DATE_PICKER");
+    }
+
     private void showCreateRequestDialog() {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_borrow_request, null);
         TextView txtStock = view.findViewById(R.id.txtDialogAvailableStock);
@@ -269,8 +300,32 @@ public class BorrowResidentActivity extends AppCompatActivity {
 
         txtStock.setText("Available: 🪑 " + availableTables + " Tables | 🪑 " + availableChairs + " Chairs");
 
+        // Banner color: red when stock is low, green otherwise
+        // (the banner TextView sits inside the MaterialCardView)
+        if (txtStock.getParent() instanceof MaterialCardView) {
+            MaterialCardView cardStock = (MaterialCardView) txtStock.getParent();
+            boolean lowStock = availableTables < 5 || availableChairs < 20;
+            cardStock.setCardBackgroundColor(Color.parseColor(lowStock ? "#BA1A1A" : "#2E7D32"));
+        }
+
+        // Show the real max in the hints
+        TextInputLayout tablesLayout = findInputLayout(inputTables);
+        if (tablesLayout != null) tablesLayout.setHint("Tables (Max: " + availableTables + ")");
+        TextInputLayout chairsLayout = findInputLayout(inputChairs);
+        if (chairsLayout != null) chairsLayout.setHint("Chairs (Max: " + availableChairs + ")");
+
+        // Default date
         String defaultDate = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(new Date());
         inputBorrowDate.setText(defaultDate);
+
+        // Date picker: tap the field or the calendar icon
+        inputBorrowDate.setFocusable(false);
+        inputBorrowDate.setClickable(true);
+        inputBorrowDate.setOnClickListener(v -> openDatePicker(inputBorrowDate));
+        TextInputLayout dateLayout = findInputLayout(inputBorrowDate);
+        if (dateLayout != null) {
+            dateLayout.setEndIconOnClickListener(v -> openDatePicker(inputBorrowDate));
+        }
 
         new AlertDialog.Builder(this)
                 .setView(view)
@@ -290,8 +345,15 @@ public class BorrowResidentActivity extends AppCompatActivity {
                     residentName = nameStr;
                     residentEmail = emailStr;
 
-                    int tables = tablesStr.isEmpty() ? 0 : Integer.parseInt(tablesStr);
-                    int chairs = chairsStr.isEmpty() ? 0 : Integer.parseInt(chairsStr);
+                    int tables;
+                    int chairs;
+                    try {
+                        tables = tablesStr.isEmpty() ? 0 : Integer.parseInt(tablesStr);
+                        chairs = chairsStr.isEmpty() ? 0 : Integer.parseInt(chairsStr);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "Please enter valid numbers.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
                     if (tables <= 0 && chairs <= 0) {
                         Toast.makeText(this, "Please request at least 1 table or chair.", Toast.LENGTH_SHORT).show();

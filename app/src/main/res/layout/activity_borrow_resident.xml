@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/designbrg"
+    android:background="@drawable/designbrg_v2"
     tools:context=".BorrowResidentActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -20,16 +20,19 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
-            <ImageButton
+            <ImageView
                 android:id="@+id/btnBack"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_centerVertical="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_arrow_next"
+                android:clickable="true"
+                android:contentDescription="@string/back_label"
+                android:focusable="true"
+                android:padding="8dp"
                 android:rotation="180"
-                app:tint="@color/dash_teal"
-                tools:ignore="ContentDescription" />
+                app:srcCompat="@drawable/ic_arrow_next"
+                app:tint="#E80000" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -44,7 +47,7 @@
                     android:layout_height="wrap_content"
                     android:text="Borrow Tables &amp; Chairs"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/dash_teal"
+                    android:textColor="@color/black"
                     android:textStyle="bold" />
 
                 <TextView
@@ -79,6 +82,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="#F44336"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="16dp">
@@ -108,6 +112,7 @@
                 </LinearLayout>
 
             </LinearLayout>
+
         </com.google.android.material.card.MaterialCardView>
 
         <RelativeLayout
@@ -130,7 +135,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:backgroundTint="@color/dash_teal"
+                android:backgroundTint="#E80000"
                 android:text="+ New Request"
                 android:textColor="@color/white"
                 android:textSize="12sp" />
@@ -151,8 +156,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/white"
-        app:itemIconTint="#333333"
-        app:itemTextColor="#000000"
+        app:elevation="8dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemPaddingBottom="4dp"
+        app:itemPaddingTop="4dp"
+        app:itemRippleColor="#33F44336"
+        app:itemTextAppearanceActive="@style/BottomNavText"
+        app:itemTextAppearanceInactive="@style/BottomNavText"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/designbrg"
+    android:background="@drawable/designbrg_v2"
     tools:context=".profile">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -158,7 +158,7 @@
                         android:text=" Bio / About Me"
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                         android:textStyle="bold"
-                        android:textColor="@color/dash_teal" />
+                        android:textColor="#E80000" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -181,7 +181,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="end"
                         android:layout_marginTop="12dp"
-                        android:backgroundTint="@color/dash_teal"
+                        android:backgroundTint="#E80000"
                         android:text="Save Bio"
                         android:textColor="@color/white" />
                 </LinearLayout>
@@ -200,15 +200,15 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:text="🔑 Change Password"
-                    android:textColor="@color/dash_teal"
-                    app:strokeColor="@color/dash_teal" />
+                    android:textColor="#E80000"
+                    app:strokeColor="#E80000" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogOut"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
-                    android:backgroundTint="#0EE99D"
+                    android:backgroundTint="#E80000"
                     android:text=" Log Out"
                     android:textColor="@color/white" />
 
@@ -223,8 +223,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/white"
-        app:itemIconTint="#333333"
-        app:itemTextColor="#000000"
+        app:elevation="8dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemPaddingBottom="4dp"
+        app:itemPaddingTop="4dp"
+        app:itemRippleColor="#33F44336"
+        app:itemTextAppearanceActive="@style/BottomNavText"
+        app:itemTextAppearanceInactive="@style/BottomNavText"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

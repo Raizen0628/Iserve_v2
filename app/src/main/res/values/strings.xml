@@ -55,6 +55,7 @@
 
     <!-- Announcement Feature Strings -->
     <string name="announcements_header">Announcements</string>
+    <string name="announcements_subtitle">Stay updated with the latest news and updates from your barangay.</string>
     <string name="search_announcements_hint">Search announcements…</string>
     <string name="pinned_announcement">📌 Pinned Announcement</string>
     <string name="announcement_title_1">Barangay Clean-up Drive</string>

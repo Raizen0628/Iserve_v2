@@ -2,36 +2,38 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="orange_login">#FA4107</color>
+    <color name="orange_login">#FF9800</color>
     <color name="red_signup">#F44336</color>
     <color name="dark_grey">#333333</color>
-    <color name="header_bg">#E91E63</color>
+    <color name="header_bg">#F44336</color>
     <color name="text_dark">#1C1B1F</color>
     <color name="text_grey">#49454F</color>
-    <color name="accent_red">#BA1A1A</color>
+    <color name="accent_red">#F44336</color>
+    <color name="red">#F44336</color>
 
-    <!-- Material 3 Palette -->
-    <color name="primary">#6750A4</color>
+    <!-- Material 3 Red & White Palette (#F44336 & #FFFFFF) -->
+    <color name="primary">#F44336</color>
     <color name="onPrimary">#FFFFFF</color>
-    <color name="primaryContainer">#EADDFF</color>
-    <color name="onPrimaryContainer">#21005D</color>
+    <color name="primaryContainer">#FFEBEE</color>
+    <color name="onPrimaryContainer">#C62828</color>
 
-    <color name="secondary">#625B71</color>
+    <color name="secondary">#F44336</color>
     <color name="onSecondary">#FFFFFF</color>
-    <color name="secondaryContainer">#E8DEF8</color>
-    <color name="onSecondaryContainer">#1D192B</color>
+    <color name="secondaryContainer">#FFEBEE</color>
+    <color name="onSecondaryContainer">#C62828</color>
 
-    <color name="tertiary">#7D5260</color>
+    <color name="tertiary">#E53935</color>
     <color name="onTertiary">#FFFFFF</color>
-    <color name="tertiaryContainer">#FFD8E4</color>
-    <color name="onTertiaryContainer">#31111D</color>
+    <color name="tertiaryContainer">#FFCDD2</color>
+    <color name="onTertiaryContainer">#B71C1C</color>
 
-    <color name="surface">#FEF7FF</color>
+    <color name="surface">#FFFFFF</color>
     <color name="onSurface">#1C1B1F</color>
-    <color name="surfaceVariant">#E7E0EC</color>
-    <color name="onSurfaceVariant">#49454F</color>
-    <color name="outline">#79747E</color>
-    <!-- Dashboard Vibrant Palette (Lighter/Vibrant) -->
+    <color name="surfaceVariant">#F5F5F5</color>
+    <color name="onSurfaceVariant">#616161</color>
+    <color name="outline">#BDBDBD</color>
+
+    <!-- Dashboard Palette -->
     <color name="dash_blue">#2196F3</color>
     <color name="dash_purple">#9C27B0</color>
     <color name="dash_teal">#009688</color>
@@ -46,8 +48,7 @@
     <color name="dash_red_light">#FFEBEE</color>
     <color name="dash_cyan_light">#E0F7FA</color>
 
-    <color name="surface_light">#F8F9FF</color>
-
-    <color name="announcement_bg">#FAD6D6</color>
+    <color name="surface_light">#FAFAFA</color>
+    <color name="announcement_bg">#FFEBEE</color>
     <color name="light_grey_stroke">#EEEEEE</color>
 </resources>

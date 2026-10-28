@@ -5,13 +5,13 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/designbrg"
+    android:background="@drawable/designbrg_v2"
     tools:context=".MainActivity">
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="112dp"
-        android:layout_height="157dp"
+        android:layout_width="120dp"
+        android:layout_height="130dp"
         android:layout_marginTop="48dp"
         android:contentDescription="@string/app_name"
         app:layout_constraintEnd_toEndOf="parent"
@@ -25,7 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/iserveko"
-        android:textColor="#000000"
+        android:textColor="#E80000"
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -115,7 +115,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="Forgot Password?"
-        android:textColor="#0097A7"
+        android:textColor="#E80000"
         android:textSize="14sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="@+id/password_input"
@@ -126,9 +126,9 @@
         android:layout_width="200dp"
         android:layout_height="48dp"
         android:layout_marginTop="24dp"
-        android:backgroundTint="#22B7BD"
+        android:backgroundTint="#E80000"
         android:text="@string/login"
-        android:textColor="#F8F8F8"
+        android:textColor="#FFFFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/forgotPasswordText" />
@@ -159,7 +159,7 @@
             android:clickable="true"
             android:focusable="true"
             android:text="@string/sign_up"
-            android:textColor="#FA4107"
+            android:textColor="#E80000"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>

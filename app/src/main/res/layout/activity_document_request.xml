@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/designbrg"
+    android:background="@drawable/designbrg_v2"
     tools:context=".DocumentRequestActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -28,7 +28,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_arrow_next"
                 android:rotation="180"
-                app:tint="@color/dash_teal"
+                app:tint="#F44336"
                 tools:ignore="ContentDescription" />
 
             <LinearLayout
@@ -44,7 +44,7 @@
                     android:layout_height="wrap_content"
                     android:text="Document Request Form"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/dash_teal"
+                    android:textColor="#FF000000"
                     android:textStyle="bold" />
 
                 <TextView
@@ -86,7 +86,7 @@
                 android:layout_marginTop="6dp"
                 app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="12dp"
-                app:strokeColor="@color/dash_teal">
+                app:strokeColor="#F44336">
 
                 <Spinner
                     android:id="@+id/spinnerDocumentType"
@@ -110,6 +110,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
+                    android:background="#F44336"
                     android:padding="14dp">
 
                     <TextView
@@ -117,7 +118,8 @@
                         android:layout_height="wrap_content"
                         android:text="📋 Requirements &amp; Instructions"
                         android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                        android:textColor="@color/dash_teal"
+                        android:textColor="#FFFFFFFF"
+                        android:background="#F44336"
                         android:textStyle="bold" />
 
                     <TextView
@@ -126,7 +128,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/onSurface"
+                        android:textColor="#FFFFFFFF"
                         tools:text="1. Valid Government Issued ID\n2. Proof of Residency in Barangay\n3. Processing Fee: PHP 50.00" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -142,38 +144,40 @@
                 android:textStyle="bold" />
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/App.InputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:hint="Full Name (First, Middle, Last)">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputFullName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPersonName" />
+                    android:inputType="textPersonName"
+                    android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/App.InputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:hint="Email Address">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textEmailAddress" />
+                    android:inputType="textEmailAddress"
+                    android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/App.InputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:hint="Complete Address / Purok">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -184,24 +188,25 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/App.InputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:hint="Contact / Mobile Number">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputContactNumber"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="phone" />
+                    android:inputType="phone"
+                    android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/App.InputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:hint="Purpose of Request (e.g. Employment, Bank, Travel)">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -210,7 +215,6 @@
                     android:layout_height="wrap_content"
                     android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
-
             <!-- DYNAMIC SECTIONS -->
 
             <!-- 1. Barangay Clearance Specific Fields -->
@@ -518,7 +522,7 @@
                 android:layout_height="52dp"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="16dp"
-                android:backgroundTint="@color/dash_teal"
+                android:backgroundTint="#F44336"
                 android:text="Submit Document Request"
                 android:textColor="@color/white"
                 android:textSize="14sp"

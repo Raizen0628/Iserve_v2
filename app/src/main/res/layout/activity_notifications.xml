@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/designbrg"
+    android:background="@drawable/designbrg_v2"
     tools:context=".NotificationsActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -28,7 +28,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_arrow_next"
                 android:rotation="180"
-                app:tint="@color/dash_teal"
+                app:tint="#F44336"
                 tools:ignore="ContentDescription" />
 
             <LinearLayout
@@ -44,7 +44,7 @@
                     android:layout_height="wrap_content"
                     android:text="Notifications"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/dash_teal"
+                    android:textColor="#FF000000"
                     android:textStyle="bold" />
 
                 <TextView
@@ -88,14 +88,20 @@
             android:textSize="16sp"
             android:visibility="gone" />
 
-        <!-- Bottom Navigation -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
-            app:itemIconTint="#333333"
-            app:itemTextColor="#000000"
+            android:background="@color/white"
+            app:elevation="8dp"
+            app:itemIconTint="@color/nav_item_color"
+            app:itemPaddingBottom="4dp"
+            app:itemPaddingTop="4dp"
+            app:itemRippleColor="#33F44336"
+            app:itemTextAppearanceActive="@style/BottomNavText"
+            app:itemTextAppearanceInactive="@style/BottomNavText"
+            app:itemTextColor="@color/nav_item_color"
+            app:labelVisibilityMode="labeled"
             app:menu="@menu/bottom_nav_menu" />
 
     </LinearLayout>

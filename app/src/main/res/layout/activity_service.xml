@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/designbrg"
+    android:background="@drawable/designbrg_v2"
     tools:context=".Service">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -29,7 +29,7 @@
                 android:contentDescription="@string/back_label"
                 android:src="@drawable/ic_arrow_next"
                 android:rotation="180"
-                app:tint="@color/dash_teal" />
+                app:tint="#E80000" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -388,8 +388,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/white"
-        app:itemIconTint="#757474"
-        app:itemTextColor="@color/black"
+        app:elevation="8dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemPaddingBottom="4dp"
+        app:itemPaddingTop="4dp"
+        app:itemRippleColor="#33F44336"
+        app:itemTextAppearanceActive="@style/BottomNavText"
+        app:itemTextAppearanceInactive="@style/BottomNavText"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

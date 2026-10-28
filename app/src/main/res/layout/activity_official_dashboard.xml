@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/designbrg"
+    android:background="@drawable/designbrg_v2"
     tools:context=".OfficialDashboardActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -36,7 +36,6 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:src="@drawable/iserveko_logo"
-                        app:tint="@color/dash_red"
                         tools:ignore="ContentDescription" />
 
                     <TextView
@@ -107,23 +106,22 @@
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="#E80000"
                     android:padding="16dp">
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/iconWelcome"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
                         android:layout_centerVertical="true"
-                        app:cardBackgroundColor="#40FFFFFF"
-                        app:cardCornerRadius="24dp"
-                        app:strokeWidth="0dp">
+                        app:cardBackgroundColor="@color/white">
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_profile"
-                            app:tint="@color/white"
+                            app:tint="#E80000"
                             tools:ignore="ContentDescription" />
                     </com.google.android.material.card.MaterialCardView>
 
@@ -142,7 +140,6 @@
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                             android:textColor="@color/white"
                             android:textStyle="bold" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -426,10 +423,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-
         android:background="@color/white"
-        app:itemIconTint="@color/dark_grey"
-        app:itemTextColor="@color/black"
+        app:elevation="8dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemPaddingBottom="4dp"
+        app:itemPaddingTop="4dp"
+        app:itemRippleColor="#33F44336"
+        app:itemTextAppearanceActive="@style/BottomNavText"
+        app:itemTextAppearanceInactive="@style/BottomNavText"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

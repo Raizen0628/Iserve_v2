@@ -2,14 +2,16 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:background="@drawable/designbrg"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:background="@drawable/designbrg_v2"
+    android:clipToPadding="false"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="24dp">
 
         <TextView
             android:id="@+id/dialogBorrowTitle"
@@ -17,113 +19,138 @@
             android:layout_height="wrap_content"
             android:text="Request Tables &amp; Chairs"
             android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-            android:textColor="@color/dash_teal"
+            android:textColor="#FF000000"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Fill in the details below to submit your request."
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="#99000000" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:cardBackgroundColor="@color/dash_teal_light"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#BA1A1A"
             app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
             app:strokeWidth="0dp">
 
             <TextView
                 android:id="@+id/txtDialogAvailableStock"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center"
                 android:padding="12dp"
                 android:text="Available:  20 Tables |  150 Chairs"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="@color/dash_teal"
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:textColor="#FFFFFF"
                 android:textStyle="bold" />
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/App.InputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:hint="Full Name">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputBorrowerName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textPersonName" />
+                android:inputType="textPersonName"
+                android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/App.InputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
             android:hint="Email Address">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputBorrowerEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textEmailAddress" />
+                android:inputType="textEmailAddress"
+                android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Number of Tables Needed (Max: 20)">
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/inputTablesCount"
-                android:layout_width="match_parent"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/App.InputLayout"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:inputType="number"
-                android:text="0" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:hint="Tables (Max: 20)">
 
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Number of Chairs Needed (Max: 150)">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputTablesCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="0" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/inputChairsCount"
-                android:layout_width="match_parent"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/App.InputLayout"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:inputType="number"
-                android:text="0" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:hint="Chairs (Max: 150)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputChairsCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="0" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/App.InputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Date Needed (e.g. Oct 15, 2026)">
+            android:layout_marginTop="16dp"
+            android:hint="Date Needed (e.g. Oct 15, 2026)"
+            app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
+            app:endIconMode="custom">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputBorrowDate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="date|text" />
+                android:inputType="date|text"
+                android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/App.InputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
             android:hint="Purpose / Event Details">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputPurpose"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="top"
                 android:inputType="textMultiLine"
-                android:minLines="2" />
+                android:minLines="3" />
         </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>

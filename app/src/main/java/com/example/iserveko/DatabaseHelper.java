@@ -150,8 +150,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void seedDefaultAnnouncements(SQLiteDatabase db) {
-        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_ANNOUNCEMENTS, null);
-        if (cursor != null) {
+        try (Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_ANNOUNCEMENTS, null)) {
             if (cursor.moveToFirst() && cursor.getInt(0) == 0) {
                 insertAnnouncement(db, "Barangay Clean-up Drive",
                         "Join us this Saturday for our monthly community clean-up drive. Meet at the barangay hall at 6:00 AM. Materials will be provided.",
@@ -161,7 +160,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         "Free routine vaccination for kids aged 0-5 years old will be available on Tuesday, Sept 16, from 8:00 AM to 3:00 PM.",
                         "Sept 12, 2026", 0);
             }
-            cursor.close();
         }
     }
 
@@ -523,12 +521,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // Get old status first to calculate inventory adjustment
         String oldStatus = "";
-        Cursor c = db.rawQuery("SELECT " + COLUMN_REQ_STATUS + " FROM " + TABLE_BORROW_REQUESTS + " WHERE id = ?", new String[]{String.valueOf(id)});
-        if (c != null) {
+        try (Cursor c = db.rawQuery("SELECT " + COLUMN_REQ_STATUS + " FROM " + TABLE_BORROW_REQUESTS + " WHERE id = ?", new String[]{String.valueOf(id)})) {
             if (c.moveToFirst()) {
                 oldStatus = c.getString(0);
             }
-            c.close();
         }
 
         ContentValues values = new ContentValues();

@@ -1,12 +1,18 @@
 package com.example.iserveko;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -46,6 +52,8 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_announcement_official);
+
+        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -139,34 +147,58 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
+    // Builds and shows a full-screen dialog around the given view
+    private AlertDialog showFullScreenDialog(View dialogView) {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        // Must be called AFTER show()
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        return dialog;
+    }
+
     private void showCreateDialog() {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_announcement, null);
         TextView txtDialogTitle = dialogView.findViewById(R.id.dialogTitle);
         EditText inputTitle = dialogView.findViewById(R.id.inputAnnTitle);
         EditText inputDesc = dialogView.findViewById(R.id.inputAnnDesc);
         CheckBox chkPinned = dialogView.findViewById(R.id.chkPinned);
+        View btnClose = dialogView.findViewById(R.id.btnClose);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnPost = dialogView.findViewById(R.id.btnPost);
 
-        txtDialogTitle.setText("Create New Announcement");
+        txtDialogTitle.setText("Create Announcement");
+        btnPost.setText("Post");
 
-        new AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setPositiveButton("Post", (dialog, which) -> {
-                    String title = inputTitle.getText().toString().trim();
-                    String desc = inputDesc.getText().toString().trim();
-                    boolean isPinned = chkPinned.isChecked();
+        AlertDialog dialog = showFullScreenDialog(dialogView);
 
-                    if (title.isEmpty() || desc.isEmpty()) {
-                        Toast.makeText(this, "Please enter both title and description", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-                    String dateStr = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(new Date());
+        btnPost.setOnClickListener(v -> {
+            String title = inputTitle.getText().toString().trim();
+            String desc = inputDesc.getText().toString().trim();
+            boolean isPinned = chkPinned.isChecked();
 
-                    databaseHelper.addAnnouncement(title, desc, dateStr, isPinned);
-                    addAnnouncementToMSSQL(title, desc, dateStr, isPinned);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            if (title.isEmpty() || desc.isEmpty()) {
+                Toast.makeText(this, "Please enter both title and description", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String dateStr = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(new Date());
+
+            databaseHelper.addAnnouncement(title, desc, dateStr, isPinned);
+            addAnnouncementToMSSQL(title, desc, dateStr, isPinned);
+            dialog.dismiss();
+        });
     }
 
     private void addAnnouncementToMSSQL(String title, String desc, String dateStr, boolean isPinned) {
@@ -201,29 +233,35 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
         EditText inputTitle = dialogView.findViewById(R.id.inputAnnTitle);
         EditText inputDesc = dialogView.findViewById(R.id.inputAnnDesc);
         CheckBox chkPinned = dialogView.findViewById(R.id.chkPinned);
+        View btnClose = dialogView.findViewById(R.id.btnClose);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnPost = dialogView.findViewById(R.id.btnPost);
 
         txtDialogTitle.setText("Edit Announcement");
+        btnPost.setText("Save");
         inputTitle.setText(announcement.getTitle());
         inputDesc.setText(announcement.getDescription());
         chkPinned.setChecked(announcement.isPinned());
 
-        new AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setPositiveButton("Save", (dialog, which) -> {
-                    String title = inputTitle.getText().toString().trim();
-                    String desc = inputDesc.getText().toString().trim();
-                    boolean isPinned = chkPinned.isChecked();
+        AlertDialog dialog = showFullScreenDialog(dialogView);
 
-                    if (title.isEmpty() || desc.isEmpty()) {
-                        Toast.makeText(this, "Title and description cannot be empty", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-                    databaseHelper.updateAnnouncement(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
-                    updateAnnouncementOnMSSQL(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        btnPost.setOnClickListener(v -> {
+            String title = inputTitle.getText().toString().trim();
+            String desc = inputDesc.getText().toString().trim();
+            boolean isPinned = chkPinned.isChecked();
+
+            if (title.isEmpty() || desc.isEmpty()) {
+                Toast.makeText(this, "Title and description cannot be empty", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            databaseHelper.updateAnnouncement(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
+            updateAnnouncementOnMSSQL(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
+            dialog.dismiss();
+        });
     }
 
     private void updateAnnouncementOnMSSQL(int id, String oldTitle, String newTitle, String desc, boolean isPinned) {

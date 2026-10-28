@@ -3,116 +3,143 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardAnnouncement"
-    style="?attr/materialCardViewElevatedStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
+    android:layout_marginStart="2dp"
+    android:layout_marginTop="2dp"
+    android:layout_marginEnd="2dp"
+    android:layout_marginBottom="14dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="16dp"
+    app:cardCornerRadius="22dp"
+    app:cardElevation="4dp"
     app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/designbrg_v2"
         android:orientation="vertical"
         android:padding="16dp">
 
-        <RelativeLayout
+        <!-- Top row: icon, title/date, actions -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/iconContainer"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                app:cardBackgroundColor="@color/dash_purple_light"
-                app:cardCornerRadius="10dp"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                app:cardBackgroundColor="#FFEBEE"
+                app:cardCornerRadius="23dp"
+                app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
                 <ImageView
                     android:id="@+id/imgIcon"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:layout_gravity="center"
                     android:src="@drawable/announcementlogo"
-                    app:tint="@color/dash_purple"
                     tools:ignore="ContentDescription" />
             </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:id="@+id/txtPinnedBadge"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/iconContainer"
                 android:layout_marginStart="12dp"
-                android:layout_centerVertical="true"
-                android:background="#FFF9C4"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:text="📌 PINNED"
-                android:textColor="#F57F17"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-            <!-- Action Buttons for Officials -->
+                <TextView
+                    android:id="@+id/txtPinnedBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/bg_pinned_badge"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:text="📌 PINNED"
+                    android:textColor="#F57F17"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/txtTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textAlignment="viewStart"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    tools:text="Barangay Clean-up Drive" />
+
+                <TextView
+                    android:id="@+id/txtDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                    android:textColor="@color/onSurfaceVariant"
+                    tools:text="Sept 15, 2026" />
+            </LinearLayout>
+
+            <!-- Action buttons for officials -->
             <LinearLayout
                 android:id="@+id/actionsContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <ImageView
                     android:id="@+id/btnEdit"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginEnd="12dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="2dp"
+                    android:padding="10dp"
                     android:src="@android:drawable/ic_menu_edit"
                     app:tint="@color/dash_blue"
                     tools:ignore="ContentDescription" />
 
                 <ImageView
                     android:id="@+id/btnDelete"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="2dp"
+                    android:padding="10dp"
                     android:src="@android:drawable/ic_menu_delete"
                     app:tint="@color/dash_red"
                     tools:ignore="ContentDescription" />
             </LinearLayout>
+        </LinearLayout>
 
-        </RelativeLayout>
-
-        <TextView
-            android:id="@+id/txtTitle"
+        <!-- Divider -->
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="1dp"
             android:layout_marginTop="12dp"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-            android:textColor="@color/black"
-            android:textStyle="bold"
-            tools:text="Barangay Clean-up Drive" />
+            android:background="#14000000" />
 
-        <TextView
-            android:id="@+id/txtDate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-            android:textColor="@color/onSurfaceVariant"
-            tools:text="Sept 15, 2026" />
-
+        <!-- Description -->
         <TextView
             android:id="@+id/txtDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="12dp"
+            android:lineSpacingExtra="4dp"
+            android:textAlignment="viewStart"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textColor="@color/onSurface"
             tools:text="Join us this Saturday for our monthly community clean-up drive." />
