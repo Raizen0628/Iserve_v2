@@ -52,7 +52,7 @@
                     android:importantForAccessibility="no"
                     android:rotation="180"
                     android:src="@drawable/ic_arrow_next"
-                    app:tint="#E80000" />
+                    app:tint="#F44336" />
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Title + subtitle -->
@@ -129,7 +129,7 @@
         android:layout_marginBottom="100dp"
         android:text="New"
         android:textColor="@color/white"
-        app:backgroundTint="#E80000"
+        app:backgroundTint="#F44336"
         app:icon="@android:drawable/ic_input_add"
         app:iconTint="@color/white" />
 

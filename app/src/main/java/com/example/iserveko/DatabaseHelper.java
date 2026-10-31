@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "IServeKo.db";
@@ -224,8 +225,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void seedBorrowInventory(SQLiteDatabase db) {
-        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_BORROW_INVENTORY, null);
-        if (cursor != null) {
+        try (Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_BORROW_INVENTORY, null)) {
             if (cursor.moveToFirst() && cursor.getInt(0) == 0) {
                 ContentValues tables = new ContentValues();
                 tables.put(COLUMN_INV_ITEM, "Table");
@@ -239,7 +239,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 chairs.put(COLUMN_INV_AVAIL, 150);
                 db.insertWithOnConflict(TABLE_BORROW_INVENTORY, null, chairs, SQLiteDatabase.CONFLICT_IGNORE);
             }
-            cursor.close();
         }
     }
 
@@ -256,6 +255,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // --- USER MANAGEMENT ---
+    @SuppressWarnings("unused")
     public boolean addResident(String firstName, String middleName, String lastName, String email, 
                                String address, String dob, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -299,10 +299,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String[] columns = {COLUMN_ID};
         String selection = COLUMN_EMAIL + " = ?" + " AND " + COLUMN_PASSWORD + " = ?";
         String[] selectionArgs = {email, password};
-        Cursor cursor = db.query(TABLE_USERS, columns, selection, selectionArgs, null, null, null);
-        int count = cursor != null ? cursor.getCount() : 0;
-        if (cursor != null) cursor.close();
-        return count > 0;
+        try (Cursor cursor = db.query(TABLE_USERS, columns, selection, selectionArgs, null, null, null)) {
+            return cursor.getCount() > 0;
+        }
     }
 
     public String getUserRole(String email) {
@@ -311,15 +310,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String[] columns = {COLUMN_ROLE};
         String selection = COLUMN_EMAIL + " = ?";
         String[] selectionArgs = {email};
-        Cursor cursor = db.query(TABLE_USERS, columns, selection, selectionArgs, null, null, null);
-        String role = "";
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                role = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROLE));
-            }
-            cursor.close();
+        try (Cursor cursor = db.query(TABLE_USERS, columns, selection, selectionArgs, null, null, null)) {
+            return cursor.moveToFirst()
+                    ? cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROLE))
+                    : "";
         }
-        return role;
     }
 
     public boolean updatePassword(String email, String newPassword) {
@@ -334,10 +329,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean checkEmailExists(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
         createUsersTable(db);
-        Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_EMAIL}, COLUMN_EMAIL + " = ?", new String[]{email}, null, null, null);
-        boolean exists = (cursor != null && cursor.getCount() > 0);
-        if (cursor != null) cursor.close();
-        return exists;
+        try (Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_EMAIL}, COLUMN_EMAIL + " = ?", new String[]{email}, null, null, null)) {
+            return cursor.getCount() > 0;
+        }
+    }
+
+    public List<ResidentUser> getAllResidents() {
+        List<ResidentUser> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        createUsersTable(db);
+        seedDefaultUsers(db);
+        String selection = COLUMN_ROLE + " = ? OR " + COLUMN_ROLE + " IS NULL OR " + COLUMN_ROLE + " != ?";
+        String[] selectionArgs = {"Resident", "Barangay Official"};
+        try (Cursor cursor = db.query(TABLE_USERS, null, selection, selectionArgs, null, null, COLUMN_LAST_NAME + " ASC")) {
+            if (cursor.moveToFirst()) {
+                do {
+                    int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID));
+                    String firstName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FIRST_NAME));
+                    String middleName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MIDDLE_NAME));
+                    String lastName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LAST_NAME));
+                    String email = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_EMAIL));
+                    String address = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ADDRESS));
+                    String mobile = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MOBILE));
+                    String role = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROLE));
+
+                    list.add(new ResidentUser(id, firstName, middleName, lastName, email, address, mobile, role));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     // --- ANNOUNCEMENTS MANAGEMENT ---
@@ -386,9 +408,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // Order pinned announcements first, then newest ID first
         String query = "SELECT * FROM " + TABLE_ANNOUNCEMENTS + " ORDER BY " + COLUMN_ANN_PINNED + " DESC, " + COLUMN_ANN_ID + " DESC";
-        Cursor cursor = db.rawQuery(query, null);
-
-        if (cursor != null) {
+        try (Cursor cursor = db.rawQuery(query, null)) {
             if (cursor.moveToFirst()) {
                 do {
                     int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ANN_ID));
@@ -400,7 +420,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     list.add(new Announcement(id, title, desc, date, isPinned));
                 } while (cursor.moveToNext());
             }
-            cursor.close();
         }
         return list;
     }
@@ -414,8 +433,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int availTables = 20;
         int availChairs = 150;
 
-        Cursor cursor = db.rawQuery("SELECT item_name, available_quantity FROM " + TABLE_BORROW_INVENTORY, null);
-        if (cursor != null) {
+        try (Cursor cursor = db.rawQuery("SELECT item_name, available_quantity FROM " + TABLE_BORROW_INVENTORY, null)) {
             while (cursor.moveToNext()) {
                 String item = cursor.getString(0);
                 int avail = cursor.getInt(1);
@@ -425,7 +443,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     availChairs = avail;
                 }
             }
-            cursor.close();
         }
         return new int[]{availTables, availChairs};
     }

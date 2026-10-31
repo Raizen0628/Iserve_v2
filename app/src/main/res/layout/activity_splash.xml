@@ -20,7 +20,7 @@
         android:layout_marginTop="16dp"
         android:text="@string/iserveko"
         android:textAppearance="@style/TextAppearance.Material3.HeadlineLarge"
-        android:textColor="#E80000"
+        android:textColor="#FF000000"
         android:textStyle="bold" />
 
     <TextView
@@ -29,7 +29,7 @@
         android:layout_marginTop="8dp"
         android:text="@string/securing_serving"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-        android:textColor="#333333" />
+        android:textColor="#FF000000" />
 
     <ProgressBar
         android:layout_width="wrap_content"

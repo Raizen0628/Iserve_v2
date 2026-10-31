@@ -38,7 +38,7 @@
                 android:layout_gravity="center"
                 android:contentDescription="Close"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
-                app:tint="#E80000" />
+                app:tint="#F44336" />
         </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
@@ -127,10 +127,10 @@
                 app:boxCornerRadiusBottomStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="#E80000"
+                app:boxStrokeColor="#F44336"
                 app:counterEnabled="true"
                 app:counterMaxLength="80"
-                app:hintTextColor="#E80000">
+                app:hintTextColor="#F44336">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputAnnTitle"
@@ -139,7 +139,7 @@
                     android:inputType="textCapSentences"
                     android:maxLength="80"
                     android:maxLines="2"
-                    android:textColor="#000000" />
+                    android:textColor="#FF000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Description -->
@@ -163,10 +163,10 @@
                 app:boxCornerRadiusBottomStart="16dp"
                 app:boxCornerRadiusTopEnd="16dp"
                 app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="#E80000"
+                app:boxStrokeColor="#F44336"
                 app:counterEnabled="true"
                 app:counterMaxLength="500"
-                app:hintTextColor="#E80000">
+                app:hintTextColor="#F44336">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputAnnDesc"
@@ -176,7 +176,7 @@
                     android:inputType="textMultiLine|textCapSentences"
                     android:maxLength="500"
                     android:minLines="6"
-                    android:textColor="#000000" />
+                    android:textColor="#FF000000" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Pin option -->
@@ -238,7 +238,7 @@
                         android:id="@+id/chkPinned"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:buttonTint="#E80000"
+                        android:buttonTint="#F44336"
                         android:minWidth="48dp"
                         android:minHeight="48dp" />
                 </LinearLayout>
@@ -263,9 +263,9 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="Cancel"
-            android:textColor="#E80000"
+            android:textColor="#F44336"
             app:cornerRadius="26dp"
-            app:strokeColor="#E80000" />
+            app:strokeColor="#F44336" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPost"
@@ -273,7 +273,7 @@
             android:layout_height="52dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:backgroundTint="#E80000"
+            android:backgroundTint="#F44336"
             android:text="Post"
             android:textColor="@color/white"
             app:cornerRadius="26dp" />

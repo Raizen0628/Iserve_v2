@@ -102,7 +102,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                app:cardBackgroundColor="@color/dash_teal_light"
+                app:cardBackgroundColor="#F44336"
                 app:cardCornerRadius="16dp"
                 app:strokeWidth="0dp">
 

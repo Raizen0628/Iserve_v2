@@ -44,7 +44,7 @@
                         android:layout_marginStart="8dp"
                         android:text="@string/iserveko"
                         android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:textColor="@color/dash_red"
+                        android:textColor="#FF000000"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -99,14 +99,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="#00CFEF"
+                app:cardBackgroundColor="#F44336"
                 app:cardCornerRadius="24dp"
                 app:strokeWidth="0dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#E80000"
+                    android:background="#F44336"
                     android:padding="16dp">
 
                     <com.google.android.material.card.MaterialCardView
@@ -121,7 +121,7 @@
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_profile"
-                            app:tint="#E80000"
+                            app:tint="#F44336"
                             tools:ignore="ContentDescription" />
                     </com.google.android.material.card.MaterialCardView>
 

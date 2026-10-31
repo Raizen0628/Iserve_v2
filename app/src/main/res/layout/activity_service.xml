@@ -29,7 +29,7 @@
                 android:contentDescription="@string/back_label"
                 android:src="@drawable/ic_arrow_next"
                 android:rotation="180"
-                app:tint="#E80000" />
+                app:tint="#F44336" />
 
             <LinearLayout
                 android:layout_width="wrap_content"

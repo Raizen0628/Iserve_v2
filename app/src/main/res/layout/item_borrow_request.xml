@@ -38,7 +38,7 @@
                     android:layout_height="22dp"
                     android:layout_gravity="center"
                     android:src="@android:drawable/ic_menu_myplaces"
-                    app:tint="#E80000"
+                    app:tint="#F44336"
                     tools:ignore="ContentDescription" />
             </com.google.android.material.card.MaterialCardView>
 

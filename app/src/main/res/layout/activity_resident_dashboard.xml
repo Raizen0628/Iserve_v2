@@ -44,7 +44,7 @@
                         android:layout_marginStart="8dp"
                         android:text="@string/iserveko"
                         android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:textColor="#F44336"
+                        android:textColor="#FF000000"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -99,7 +99,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="#00CFEF"
+                app:cardBackgroundColor="#F44336"
                 app:cardCornerRadius="24dp"
                 app:strokeWidth="0dp">
 
@@ -171,10 +171,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="#FFFDE7"
+                app:cardBackgroundColor="#FFFFFFFF"
                 app:cardCornerRadius="20dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#FBC02D">
+                app:strokeColor="#F44336">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -192,7 +192,7 @@
                             android:layout_height="wrap_content"
                             android:text="📢 LATEST ANNOUNCEMENT"
                             android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                            android:textColor="#F57F17"
+                            android:textColor="#F44336"
                             android:textStyle="bold" />
 
                         <TextView
@@ -201,7 +201,7 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:text="View All ›"
-                            android:textColor="@color/dash_teal"
+                            android:textColor="#F44336"
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </RelativeLayout>

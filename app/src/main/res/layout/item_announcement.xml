@@ -66,7 +66,7 @@
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="3dp"
                     android:text="📌 PINNED"
-                    android:textColor="#F57F17"
+                    android:textColor="#F44336"
                     android:textSize="10sp"
                     android:textStyle="bold"
                     android:visibility="gone"
@@ -110,7 +110,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="10dp"
                     android:src="@android:drawable/ic_menu_edit"
-                    app:tint="@color/dash_blue"
+                    app:tint="#F44336"
                     tools:ignore="ContentDescription" />
 
                 <ImageView
@@ -120,7 +120,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="10dp"
                     android:src="@android:drawable/ic_menu_delete"
-                    app:tint="@color/dash_red"
+                    app:tint="#F44336"
                     tools:ignore="ContentDescription" />
             </LinearLayout>
         </LinearLayout>

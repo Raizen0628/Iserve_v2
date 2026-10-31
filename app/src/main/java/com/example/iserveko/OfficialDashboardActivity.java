@@ -52,6 +52,14 @@ public class OfficialDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        findViewById(R.id.cardResidentDirectory).setOnClickListener(v -> {
+            Intent intent = new Intent(this, ResidentDirectoryActivity.class);
+            if (getIntent().hasExtra("EMAIL")) {
+                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+            }
+            startActivity(intent);
+        });
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
         bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);

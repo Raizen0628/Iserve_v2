@@ -5,11 +5,11 @@
         <item name="boxCornerRadiusTopEnd">12dp</item>
         <item name="boxCornerRadiusBottomStart">12dp</item>
         <item name="boxCornerRadiusBottomEnd">12dp</item>
-        <item name="boxBackgroundColor">#FFFFFF</item>
-        <item name="boxStrokeColor">#BA1A1A</item>
+        <item name="boxBackgroundColor">#FFFFFFFF</item>
+        <item name="boxStrokeColor">#F44336</item>
         <item name="boxStrokeWidth">1dp</item>
         <item name="boxStrokeWidthFocused">2dp</item>
-        <item name="hintTextColor">#BA1A1A</item>
+        <item name="hintTextColor">#F44336</item>
     </style>
 
     <style name="App.Chip.Filter" parent="Widget.Material3.Chip.Filter">
@@ -25,10 +25,10 @@
         <item name="rippleColor">#33F44336</item>
 
         <item name="boxBackgroundColor">#F44336</item>
-        <item name="boxStrokeColor">#FFFFFF</item>
-        <item name="hintTextColor">#FFFFFF</item>
-        <item name="android:textColorHint">#FFFFFF</item>
-        <item name="cursorColor">#FFFFFF</item>
+        <item name="boxStrokeColor">#FFFFFFFF</item>
+        <item name="hintTextColor">#FFFFFFFF</item>
+        <item name="android:textColorHint">#FFFFFFFF</item>
+        <item name="cursorColor">#FFFFFFFF</item>
     </style>
 
     <style name="BottomNavText" parent="TextAppearance.Material3.LabelSmall">

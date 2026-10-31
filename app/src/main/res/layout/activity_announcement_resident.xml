@@ -51,7 +51,7 @@
                     android:contentDescription="@string/back_label"
                     android:rotation="180"
                     android:src="@drawable/ic_arrow_next"
-                    app:tint="#E80000" />
+                    app:tint="#F44336" />
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Title + subtitle -->
