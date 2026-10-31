@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.material)
     implementation(libs.recyclerview)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0")
     implementation("com.android.volley:volley:1.2.1")
     implementation("net.sourceforge.jtds:jtds:1.3.1")
     testImplementation(libs.junit)

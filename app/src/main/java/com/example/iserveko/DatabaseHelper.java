@@ -13,7 +13,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "IServeKo.db";
-    private static final int DATABASE_VERSION = 10;
+    private static final int DATABASE_VERSION = 12;
 
     // Users table
     private static final String TABLE_USERS = "users";
@@ -28,6 +28,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_DOB = "dob";
     private static final String COLUMN_MOBILE = "mobile";
     private static final String COLUMN_POSITION = "position";
+    private static final String COLUMN_BIO = "bio";
 
     // Announcements table
     private static final String TABLE_ANNOUNCEMENTS = "announcements";
@@ -36,6 +37,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_ANN_DESC = "description";
     private static final String COLUMN_ANN_DATE = "date";
     private static final String COLUMN_ANN_PINNED = "is_pinned";
+    private static final String COLUMN_ANN_EVENT_DATE = "event_date";
+    private static final String COLUMN_ANN_EVENT_TIME = "event_time";
 
     // Borrow Inventory table
     private static final String TABLE_BORROW_INVENTORY = "borrow_inventory";
@@ -110,8 +113,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_ADDRESS + " TEXT,"
                 + COLUMN_DOB + " TEXT,"
                 + COLUMN_MOBILE + " TEXT,"
-                + COLUMN_POSITION + " TEXT" + ")";
+                + COLUMN_POSITION + " TEXT,"
+                + COLUMN_BIO + " TEXT" + ")";
         db.execSQL(CREATE_USERS_TABLE);
+        ensureUserBioColumn(db);
+    }
+
+    private void ensureUserBioColumn(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + COLUMN_BIO + " TEXT");
+        } catch (Exception ignored) {
+            // Column already exists.
+        }
     }
 
     private void seedDefaultUsers(SQLiteDatabase db) {
@@ -140,11 +153,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_ANN_TITLE + " TEXT,"
                 + COLUMN_ANN_DESC + " TEXT,"
                 + COLUMN_ANN_DATE + " TEXT,"
-                + COLUMN_ANN_PINNED + " INTEGER DEFAULT 0" + ")";
+                + COLUMN_ANN_PINNED + " INTEGER DEFAULT 0,"
+                + COLUMN_ANN_EVENT_DATE + " TEXT,"
+                + COLUMN_ANN_EVENT_TIME + " TEXT" + ")";
         db.execSQL(CREATE_ANNOUNCEMENTS_TABLE);
 
         try {
             db.execSQL("ALTER TABLE " + TABLE_ANNOUNCEMENTS + " ADD COLUMN " + COLUMN_ANN_PINNED + " INTEGER DEFAULT 0");
+        } catch (Exception ignored) {
+            // Column already exists
+        }
+        ensureAnnouncementEventColumns(db);
+    }
+
+    private void ensureAnnouncementEventColumns(SQLiteDatabase db) {
+        try {
+            db.execSQL("ALTER TABLE " + TABLE_ANNOUNCEMENTS + " ADD COLUMN " + COLUMN_ANN_EVENT_DATE + " TEXT");
+        } catch (Exception ignored) {
+            // Column already exists
+        }
+        try {
+            db.execSQL("ALTER TABLE " + TABLE_ANNOUNCEMENTS + " ADD COLUMN " + COLUMN_ANN_EVENT_TIME + " TEXT");
         } catch (Exception ignored) {
             // Column already exists
         }
@@ -364,6 +393,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // --- ANNOUNCEMENTS MANAGEMENT ---
     public boolean addAnnouncement(String title, String description, String date, boolean isPinned) {
+        return addAnnouncement(title, description, date, isPinned, null, null);
+    }
+
+    public boolean addAnnouncement(String title, String description, String date, boolean isPinned,
+                                   String eventDate, String eventTime) {
         SQLiteDatabase db = this.getWritableDatabase();
         createAnnouncementsTable(db);
         ContentValues values = new ContentValues();
@@ -371,18 +405,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_ANN_DESC, description);
         values.put(COLUMN_ANN_DATE, date);
         values.put(COLUMN_ANN_PINNED, isPinned ? 1 : 0);
+        values.put(COLUMN_ANN_EVENT_DATE, eventDate);
+        values.put(COLUMN_ANN_EVENT_TIME, eventTime);
 
         long result = db.insert(TABLE_ANNOUNCEMENTS, null, values);
         return result != -1;
     }
 
     public boolean updateAnnouncement(int id, String oldTitle, String newTitle, String description, boolean isPinned) {
+        return updateAnnouncement(id, oldTitle, newTitle, description, isPinned, null, null);
+    }
+
+    public boolean updateAnnouncement(int id, String oldTitle, String newTitle, String description,
+                                      boolean isPinned, String eventDate, String eventTime) {
         SQLiteDatabase db = this.getWritableDatabase();
         createAnnouncementsTable(db);
         ContentValues values = new ContentValues();
         values.put(COLUMN_ANN_TITLE, newTitle);
         values.put(COLUMN_ANN_DESC, description);
         values.put(COLUMN_ANN_PINNED, isPinned ? 1 : 0);
+        values.put(COLUMN_ANN_EVENT_DATE, eventDate);
+        values.put(COLUMN_ANN_EVENT_TIME, eventTime);
 
         int rows = db.update(TABLE_ANNOUNCEMENTS, values, COLUMN_ANN_ID + " = ? OR " + COLUMN_ANN_TITLE + " = ?",
                 new String[]{String.valueOf(id), oldTitle != null ? oldTitle : ""});
@@ -416,8 +459,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String desc = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ANN_DESC));
                     String date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ANN_DATE));
                     boolean isPinned = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ANN_PINNED)) == 1;
+                    String eventDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ANN_EVENT_DATE));
+                    String eventTime = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ANN_EVENT_TIME));
 
-                    list.add(new Announcement(id, title, desc, date, isPinned));
+                    list.add(new Announcement(id, title, desc, date, isPinned, eventDate, eventTime));
                 } while (cursor.moveToNext());
             }
         }
@@ -447,13 +492,50 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return new int[]{availTables, availChairs};
     }
 
-    public void updateInventoryStock(int addTables, int addChairs) {
+    public boolean updateInventoryStock(String itemName, int quantity) {
+        if (quantity <= 0 || !isSupportedInventoryItem(itemName)) return false;
+
         SQLiteDatabase db = this.getWritableDatabase();
         createBorrowTables(db);
         seedBorrowInventory(db);
+        db.beginTransaction();
+        try {
+            db.execSQL("UPDATE borrow_inventory SET available_quantity = available_quantity + ?, total_quantity = total_quantity + ? WHERE item_name = ?",
+                    new Object[]{quantity, quantity, itemName});
+            if (getChangedRowCount(db) != 1) return false;
+            db.setTransactionSuccessful();
+            return true;
+        } finally {
+            db.endTransaction();
+        }
+    }
 
-        db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " + " + addTables + ", " + COLUMN_INV_TOTAL + " = " + COLUMN_INV_TOTAL + " + " + addTables + " WHERE item_name = 'Table'");
-        db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " + " + addChairs + ", " + COLUMN_INV_TOTAL + " = " + COLUMN_INV_TOTAL + " + " + addChairs + " WHERE item_name = 'Chair'");
+    public void syncInventoryItem(String itemName, int total, int available) {
+        if (!isSupportedInventoryItem(itemName)) return;
+        SQLiteDatabase db = this.getWritableDatabase();
+        createBorrowTables(db);
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_INV_TOTAL, Math.max(0, total));
+        values.put(COLUMN_INV_AVAIL, Math.max(0, available));
+        db.update(TABLE_BORROW_INVENTORY, values, "item_name = ?", new String[]{itemName});
+    }
+
+    private boolean isSupportedInventoryItem(String itemName) {
+        return "Table".equalsIgnoreCase(itemName) || "Chair".equalsIgnoreCase(itemName);
+    }
+
+    private int getChangedRowCount(SQLiteDatabase db) {
+        try (Cursor cursor = db.rawQuery("SELECT changes()", null)) {
+            return cursor.moveToFirst() ? cursor.getInt(0) : 0;
+        }
+    }
+
+    public boolean cacheBorrowRequestStatus(int id, String status, String remarks) {
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_REQ_STATUS, status);
+        values.put(COLUMN_REQ_REMARKS, remarks);
+        return getWritableDatabase().update(TABLE_BORROW_REQUESTS, values,
+                "id = ?", new String[]{String.valueOf(id)}) == 1;
     }
 
     public boolean addBorrowRequest(String residentEmail, String residentName, int tables, int chairs,
@@ -535,36 +617,45 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean updateBorrowRequestStatus(int id, String newStatus, int tables, int chairs, String remarks) {
         SQLiteDatabase db = this.getWritableDatabase();
         createBorrowTables(db);
+        seedBorrowInventory(db);
+        if (tables < 0 || chairs < 0) return false;
 
-        // Get old status first to calculate inventory adjustment
-        String oldStatus = "";
-        try (Cursor c = db.rawQuery("SELECT " + COLUMN_REQ_STATUS + " FROM " + TABLE_BORROW_REQUESTS + " WHERE id = ?", new String[]{String.valueOf(id)})) {
-            if (c.moveToFirst()) {
-                oldStatus = c.getString(0);
+        db.beginTransaction();
+        try {
+            String oldStatus;
+            try (Cursor cursor = db.rawQuery("SELECT status FROM borrow_requests WHERE id = ?",
+                    new String[]{String.valueOf(id)})) {
+                if (!cursor.moveToFirst()) return false;
+                oldStatus = cursor.getString(0);
             }
-        }
 
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_REQ_STATUS, newStatus);
-        if (remarks != null) {
-            values.put(COLUMN_REQ_REMARKS, remarks);
-        }
-
-        int rows = db.update(TABLE_BORROW_REQUESTS, values, COLUMN_REQ_ID + " = ?", new String[]{String.valueOf(id)});
-
-        if (rows > 0) {
-            // Deduct stock when changing to Approved from Pending/Declined
             if ("Approved".equalsIgnoreCase(newStatus) && !"Approved".equalsIgnoreCase(oldStatus)) {
-                db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " - " + tables + " WHERE " + COLUMN_INV_ITEM + " = 'Table'");
-                db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " - " + chairs + " WHERE " + COLUMN_INV_ITEM + " = 'Chair'");
+                if (!adjustAvailableInventory(db, "Table", -tables)
+                        || !adjustAvailableInventory(db, "Chair", -chairs)) return false;
+            } else if ("Returned".equalsIgnoreCase(newStatus) && "Approved".equalsIgnoreCase(oldStatus)) {
+                if (!adjustAvailableInventory(db, "Table", tables)
+                        || !adjustAvailableInventory(db, "Chair", chairs)) return false;
             }
-            // Return stock when changing from Approved to Returned
-            else if ("Returned".equalsIgnoreCase(newStatus) && "Approved".equalsIgnoreCase(oldStatus)) {
-                db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " + " + tables + " WHERE " + COLUMN_INV_ITEM + " = 'Table'");
-                db.execSQL("UPDATE " + TABLE_BORROW_INVENTORY + " SET " + COLUMN_INV_AVAIL + " = " + COLUMN_INV_AVAIL + " + " + chairs + " WHERE " + COLUMN_INV_ITEM + " = 'Chair'");
-            }
+
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_REQ_STATUS, newStatus);
+            if (remarks != null) values.put(COLUMN_REQ_REMARKS, remarks);
+            int rows = db.update(TABLE_BORROW_REQUESTS, values,
+                    "id = ? AND status = ?", new String[]{String.valueOf(id), oldStatus});
+            if (rows != 1) return false;
+
+            db.setTransactionSuccessful();
+            return true;
+        } finally {
+            db.endTransaction();
         }
-        return rows > 0;
+    }
+
+    private boolean adjustAvailableInventory(SQLiteDatabase db, String itemName, int delta) {
+        if (delta == 0) return true;
+        db.execSQL("UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = ? AND available_quantity + ? >= 0",
+                new Object[]{delta, itemName, delta});
+        return getChangedRowCount(db) == 1;
     }
 
     public boolean cancelBorrowRequest(int id) {
@@ -573,6 +664,53 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         int rows = db.delete(TABLE_BORROW_REQUESTS, COLUMN_REQ_ID + " = ? AND " + COLUMN_REQ_STATUS + " = 'Pending'", new String[]{String.valueOf(id)});
         return rows > 0;
+    }
+
+    // Returns the profile fields needed to generate a bio while offline.
+    public String[] getUserProfileDetails(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        createUsersTable(db);
+        String[] columns = {COLUMN_FIRST_NAME, COLUMN_MIDDLE_NAME, COLUMN_LAST_NAME,
+                COLUMN_ADDRESS, COLUMN_MOBILE, COLUMN_ROLE, COLUMN_POSITION, COLUMN_BIO};
+        String[] profile = {"", "", "", "", "", ""};
+        try (Cursor cursor = db.query(TABLE_USERS, columns, COLUMN_EMAIL + " = ?",
+                new String[]{email}, null, null, null)) {
+            if (cursor.moveToFirst()) {
+                String first = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FIRST_NAME));
+                String middle = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MIDDLE_NAME));
+                String last = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LAST_NAME));
+                profile[0] = joinProfileName(first, middle, last);
+                profile[1] = safeProfileValue(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ADDRESS)));
+                profile[2] = safeProfileValue(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MOBILE)));
+                profile[3] = safeProfileValue(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROLE)));
+                profile[4] = safeProfileValue(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_POSITION)));
+                profile[5] = safeProfileValue(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BIO)));
+            }
+        }
+        return profile;
+    }
+
+    public boolean updateUserBio(String email, String bio) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        createUsersTable(db);
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_BIO, bio);
+        return db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", new String[]{email}) == 1;
+    }
+
+    private String joinProfileName(String first, String middle, String last) {
+        StringBuilder name = new StringBuilder();
+        for (String part : new String[]{first, middle, last}) {
+            if (part != null && !part.trim().isEmpty()) {
+                if (name.length() > 0) name.append(' ');
+                name.append(part.trim());
+            }
+        }
+        return name.toString();
+    }
+
+    private String safeProfileValue(String value) {
+        return value == null ? "" : value;
     }
 
     // --- DOCUMENT REQUESTS MANAGEMENT ---
@@ -716,6 +854,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_MEET_REMARKS, "");
 
         long result = db.insert(TABLE_MEETING_REQUESTS, null, values);
+        return result != -1;
+    }
+
+    public boolean addMeetingRequestWithId(int id, String residentEmail, String residentName,
+                                           String meetingDate, String meetingTime, String purpose,
+                                           String requestDate, String remarks) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        createMeetingRequestsTable(db);
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_MEET_ID, id);
+        values.put(COLUMN_MEET_EMAIL, residentEmail);
+        values.put(COLUMN_MEET_NAME, residentName);
+        values.put(COLUMN_MEET_DATE, meetingDate);
+        values.put(COLUMN_MEET_TIME, meetingTime);
+        values.put(COLUMN_MEET_PURPOSE, purpose);
+        values.put(COLUMN_MEET_STATUS, "Pending");
+        values.put(COLUMN_MEET_REQ_DATE, requestDate);
+        values.put(COLUMN_MEET_REMARKS, remarks);
+        long result = db.insertWithOnConflict(TABLE_MEETING_REQUESTS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
         return result != -1;
     }
 

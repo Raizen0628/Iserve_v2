@@ -40,11 +40,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:background="@drawable/rounded"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="4dp"
+                android:background="@drawable/bg_status_badge"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
                 android:text="PENDING"
-                android:textColor="#F44336"
+                android:textColor="@color/status_pending_fg"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </RelativeLayout>

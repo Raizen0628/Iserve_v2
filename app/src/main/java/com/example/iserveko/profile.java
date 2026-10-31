@@ -21,8 +21,8 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,12 +34,16 @@ public class profile extends AppCompatActivity {
     private EditText inputBio;
     private String residentEmail = "resident@iserveko.com";
     private boolean isOfficial = false;
+    private SharedPreferences profilePrefs;
+    private final ExecutorService profileExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_profile);
+        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -66,14 +70,8 @@ public class profile extends AppCompatActivity {
 
         txtProfileEmail.setText(residentEmail);
 
-        SharedPreferences prefs = getSharedPreferences("UserProfilePrefs", Context.MODE_PRIVATE);
-        inputBio.setText(prefs.getString("bio_" + residentEmail, ""));
-
-        findViewById(R.id.btnSaveBio).setOnClickListener(v -> {
-            String bio = inputBio.getText().toString().trim();
-            prefs.edit().putString("bio_" + residentEmail, bio).apply();
-            Toast.makeText(this, "Bio saved successfully!", Toast.LENGTH_SHORT).show();
-        });
+        profilePrefs = getSharedPreferences("UserProfilePrefs", Context.MODE_PRIVATE);
+        findViewById(R.id.btnSaveBio).setOnClickListener(v -> saveBio());
 
         findViewById(R.id.btnChangePassword).setOnClickListener(v -> showChangePasswordDialog());
 
@@ -119,49 +117,166 @@ public class profile extends AppCompatActivity {
     }
 
     private void loadUserProfile() {
-        if (residentEmail == null || residentEmail.isEmpty()) return;
-
-        String userQuery = "SELECT first_name, middle_name, last_name, email, address, mobile FROM users WHERE email = ?";
-        connect_sql.executeQueryAsync(userQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
-            @Override
-            public void onSuccess(ResultSet rs) {
-                try {
-                    if (rs != null && rs.next()) {
-                        String fn = rs.getString("first_name");
-                        String mn = rs.getString("middle_name");
-                        String ln = rs.getString("last_name");
-                        String addr = rs.getString("address");
-                        String mob = rs.getString("mobile");
-
-                        StringBuilder nameBuilder = new StringBuilder();
-                        if (fn != null && !fn.trim().isEmpty()) nameBuilder.append(fn.trim());
-                        if (mn != null && !mn.trim().isEmpty()) nameBuilder.append(" ").append(mn.trim());
-                        if (ln != null && !ln.trim().isEmpty()) nameBuilder.append(" ").append(ln.trim());
-
-                        txtProfileName.setText(nameBuilder.toString().isEmpty() ? residentEmail : nameBuilder.toString());
-                        if (addr != null && !addr.trim().isEmpty()) txtProfileAddress.setText(addr);
-                        if (mob != null && !mob.trim().isEmpty()) txtProfileMobile.setText(mob);
-                        return;
-                    }
-                } catch (SQLException e) {
-                    Log.e("PROFILE_ERR", e.getMessage(), e);
-                }
-                loadLocalProfile();
+        if (residentEmail == null || residentEmail.trim().isEmpty()) return;
+        profileExecutor.execute(() -> {
+            ProfileData profile = loadCloudProfile();
+            String[] local = databaseHelper.getUserProfileDetails(residentEmail);
+            if (profile == null && local != null) {
+                profile = new ProfileData(residentEmail, local[0], local[1], local[2],
+                        local[3], local[4], local[5]);
+            } else if (profile != null && (profile.bio == null || profile.bio.trim().isEmpty())
+                    && local != null && local[5] != null && !local[5].trim().isEmpty()) {
+                profile.bio = local[5];
             }
 
-            @Override
-            public void onError(Exception e) {
-                loadLocalProfile();
-            }
+            ProfileData result = profile;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                bindProfile(result);
+            });
         });
     }
 
-    private void loadLocalProfile() {
-        String[] prof = databaseHelper.getUserProfile(residentEmail);
-        if (prof != null) {
-            if (!prof[0].isEmpty()) txtProfileName.setText(prof[0]);
-            if (!prof[1].isEmpty()) txtProfileAddress.setText(prof[1]);
-            if (!prof[2].isEmpty()) txtProfileMobile.setText(prof[2]);
+    private ProfileData loadCloudProfile() {
+        try (Connection connection = connect_sql.getConnection()) {
+            if (connection == null) return null;
+            ProfileData profile;
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT first_name, middle_name, last_name, email, address, mobile, role, position FROM users WHERE email = ?")) {
+                statement.setString(1, residentEmail);
+                try (ResultSet result = statement.executeQuery()) {
+                    if (!result.next()) return null;
+                    profile = new ProfileData(
+                            safe(result.getString("email")),
+                            joinName(result.getString("first_name"), result.getString("middle_name"),
+                                    result.getString("last_name")),
+                            safe(result.getString("address")),
+                            safe(result.getString("mobile")),
+                            safe(result.getString("role")),
+                            safe(result.getString("position")),
+                            "");
+                }
+            }
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT bio FROM users WHERE email = ?")) {
+                statement.setString(1, residentEmail);
+                try (ResultSet result = statement.executeQuery()) {
+                    if (result.next()) profile.bio = safe(result.getString("bio"));
+                }
+            } catch (Exception missingBioColumn) {
+                Log.i("PROFILE_BIO", "Cloud bio is unavailable until the users bio column is added.");
+            }
+            return profile;
+        } catch (Exception e) {
+            Log.w("PROFILE_LOAD", "Could not load the cloud profile; using the local profile.");
+            return null;
+        }
+    }
+
+    private void bindProfile(ProfileData profile) {
+        if (profile != null) {
+            txtProfileName.setText(profile.name.isEmpty() ? residentEmail : profile.name);
+            txtProfileEmail.setText(profile.email.isEmpty() ? residentEmail : profile.email);
+            if (!profile.address.isEmpty()) txtProfileAddress.setText(profile.address);
+            if (!profile.mobile.isEmpty()) txtProfileMobile.setText(profile.mobile);
+        }
+
+        String remoteBio = profile == null ? "" : safe(profile.bio);
+        String storedBio = profilePrefs.getString(bioKey(), null);
+        boolean manuallyEdited = profilePrefs.getBoolean(bioEditedKey(), false)
+                || (storedBio != null && !storedBio.trim().isEmpty());
+        String value;
+        if (manuallyEdited) {
+            value = storedBio == null ? "" : storedBio;
+            profilePrefs.edit().putBoolean(bioEditedKey(), true).apply();
+        } else if (!remoteBio.trim().isEmpty()) {
+            value = remoteBio;
+        } else {
+            value = createGeneratedBio(profile);
+        }
+        inputBio.setText(value);
+    }
+
+    private void saveBio() {
+        String bio = inputBio.getText() == null ? "" : inputBio.getText().toString().trim();
+        profilePrefs.edit().putString(bioKey(), bio).putBoolean(bioEditedKey(), true).apply();
+        profileExecutor.execute(() -> {
+            boolean localSaved = databaseHelper.updateUserBio(residentEmail, bio);
+            boolean cloudSaved = false;
+            try (Connection connection = connect_sql.getConnection();
+                 PreparedStatement statement = connection == null ? null
+                         : connection.prepareStatement("UPDATE users SET bio = ? WHERE email = ?")) {
+                if (statement != null) {
+                    statement.setString(1, bio);
+                    statement.setString(2, residentEmail);
+                    cloudSaved = statement.executeUpdate() > 0;
+                }
+            } catch (Exception e) {
+                Log.w("PROFILE_BIO_SAVE", "Cloud bio save failed; the local bio remains saved.");
+            }
+
+            boolean savedOnCloud = cloudSaved;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                int message = savedOnCloud ? R.string.profile_bio_saved
+                        : localSaved ? R.string.profile_bio_saved_offline : R.string.profile_bio_save_error;
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            });
+        });
+    }
+
+    private String createGeneratedBio(ProfileData profile) {
+        String role = profile == null ? "" : profile.role;
+        String address = profile == null ? "" : profile.address;
+        String position = profile == null ? "" : profile.position;
+        if (role.toLowerCase(java.util.Locale.ROOT).contains("official")) {
+            return position.isEmpty() ? getString(R.string.profile_bio_official)
+                    : getString(R.string.profile_bio_official_position, position);
+        }
+        if (!address.isEmpty()) {
+            if (address.toLowerCase(java.util.Locale.ROOT).contains("lipa city")) {
+                return getString(R.string.profile_bio_resident_address, address);
+            }
+            return getString(R.string.profile_bio_resident_address_city, address);
+        }
+        return getString(R.string.profile_bio_resident_default);
+    }
+
+    private String bioKey() { return "bio_" + residentEmail; }
+    private String bioEditedKey() { return "bio_edited_" + residentEmail; }
+
+    private String joinName(String first, String middle, String last) {
+        StringBuilder name = new StringBuilder();
+        for (String part : new String[]{first, middle, last}) {
+            if (part != null && !part.trim().isEmpty()) {
+                if (name.length() > 0) name.append(' ');
+                name.append(part.trim());
+            }
+        }
+        return name.toString();
+    }
+
+    private String safe(String value) { return value == null ? "" : value.trim(); }
+
+    /** Holds user fields loaded from MSSQL or the local profile cache. */
+    private static class ProfileData {
+        final String email;
+        final String name;
+        final String address;
+        final String mobile;
+        final String role;
+        final String position;
+        String bio;
+
+        ProfileData(String email, String name, String address, String mobile,
+                    String role, String position, String bio) {
+            this.email = email;
+            this.name = name;
+            this.address = address;
+            this.mobile = mobile;
+            this.role = role;
+            this.position = position;
+            this.bio = bio;
         }
     }
 
@@ -201,6 +316,12 @@ public class profile extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        profileExecutor.shutdown();
     }
 
     private void updatePasswordOnMSSQL(String email, String newPass) {

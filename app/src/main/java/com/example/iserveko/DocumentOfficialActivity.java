@@ -91,6 +91,7 @@ public class DocumentOfficialActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- UI setup
 
     private void setupChipFilter() {
+        chipGroupDocStatus.check(R.id.chipAll);
         chipGroupDocStatus.setOnCheckedStateChangeListener((group, checkedIds) -> {
             currentSelectedStatus = statusFromChips(checkedIds);
             if (adapter != null) {

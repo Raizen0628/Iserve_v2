@@ -79,11 +79,12 @@
                 android:id="@+id/txtStatusBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/rounded"
+                android:background="@drawable/bg_status_badge"
+                android:gravity="center_vertical"
                 android:paddingHorizontal="12dp"
-                android:paddingVertical="5dp"
+                android:paddingVertical="6dp"
                 android:text="PENDING"
-                android:textColor="#49454F"
+                android:textColor="@color/status_pending_fg"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>

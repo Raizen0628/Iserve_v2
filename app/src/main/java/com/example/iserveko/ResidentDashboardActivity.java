@@ -85,9 +85,8 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.cardMeetingRequest).setOnClickListener(v -> {
-            Intent intent = new Intent(this, MeetingRequestActivity.class);
+            Intent intent = new Intent(this, MeetingResidentActivity.class);
             intent.putExtra("EMAIL", getCurrentEmail());
-            intent.putExtra("IS_OFFICIAL", false);
             startActivity(intent);
         });
 

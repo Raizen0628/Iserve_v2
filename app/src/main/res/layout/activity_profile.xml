@@ -18,13 +18,27 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="24dp">
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_alignParentStart="true"
+                android:text="@string/back_label" />
 
             <TextView
+                android:id="@+id/profileToolbarTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="User Profile"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="8dp"
+                android:layout_toEndOf="@id/btnBack"
+                android:text="@string/profile_title"
+                android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
                 android:textColor="@color/onSurface"
                 android:textStyle="bold" />
         </RelativeLayout>
@@ -165,13 +179,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="Write something about yourself...">
+                        android:hint="@string/profile_bio_hint">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/inputBio"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="textMultiLine"
+                            android:maxLength="500"
                             android:minLines="2" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -182,7 +197,7 @@
                         android:layout_gravity="end"
                         android:layout_marginTop="12dp"
                         android:backgroundTint="#F44336"
-                        android:text="Save Bio"
+                        android:text="@string/profile_save_bio"
                         android:textColor="@color/white" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

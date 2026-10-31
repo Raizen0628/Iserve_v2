@@ -1,5 +1,7 @@
 package com.example.iserveko;
 
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -35,6 +37,7 @@ import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +49,8 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
     private DatabaseHelper databaseHelper;
     private RecyclerView recyclerView;
     private AnnouncementAdapter adapter;
+    private String draftEventDate = "";
+    private String draftEventTime = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +72,7 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
 
         loadAnnouncements();
 
-        findViewById(R.id.btnCreateAnnouncement).setOnClickListener(v -> showCreateDialog());
+        findViewById(R.id.btnCreateAnnouncement).setOnClickListener(v -> showCreateDialog(null));
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
         bottomNavigationView.setOnItemSelectedListener(null);
@@ -96,6 +101,12 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
             }
             return false;
         });
+
+        String selectedEventDate = getIntent().getStringExtra("calendar_selected_date");
+        if (selectedEventDate != null && !selectedEventDate.isEmpty()) {
+            getIntent().removeExtra("calendar_selected_date");
+            showCreateDialog(selectedEventDate);
+        }
     }
 
     private void loadAnnouncements() {
@@ -111,7 +122,9 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                         String desc = rs.getString("description");
                         String date = rs.getString("date");
                         boolean isPinned = rs.getInt("is_pinned") == 1;
-                        list.add(new Announcement(id, title, desc, date, isPinned));
+                        String eventDate = rs.getString("event_date");
+                        String eventTime = rs.getString("event_time");
+                        list.add(new Announcement(id, title, desc, date, isPinned, eventDate, eventTime));
                     }
 
                     bindAdapter(list);
@@ -165,7 +178,7 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
         return dialog;
     }
 
-    private void showCreateDialog() {
+    private void showCreateDialog(String preselectedEventDate) {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_announcement, null);
         TextView txtDialogTitle = dialogView.findViewById(R.id.dialogTitle);
         EditText inputTitle = dialogView.findViewById(R.id.inputAnnTitle);
@@ -175,6 +188,9 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
         Button btnPost = dialogView.findViewById(R.id.btnPost);
 
+        draftEventDate = preselectedEventDate == null ? "" : preselectedEventDate;
+        draftEventTime = "";
+        bindEventPickers(dialogView, draftEventDate, draftEventTime);
         txtDialogTitle.setText("Create Announcement");
         btnPost.setText("Post");
 
@@ -195,13 +211,14 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
 
             String dateStr = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(new Date());
 
-            databaseHelper.addAnnouncement(title, desc, dateStr, isPinned);
-            addAnnouncementToMSSQL(title, desc, dateStr, isPinned);
+            databaseHelper.addAnnouncement(title, desc, dateStr, isPinned, draftEventDate, draftEventTime);
+            addAnnouncementToMSSQL(title, desc, dateStr, isPinned, draftEventDate, draftEventTime);
             dialog.dismiss();
         });
     }
 
-    private void addAnnouncementToMSSQL(String title, String desc, String dateStr, boolean isPinned) {
+    private void addAnnouncementToMSSQL(String title, String desc, String dateStr, boolean isPinned,
+                                        String eventDate, String eventTime) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
 
@@ -210,11 +227,13 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
                     try (PreparedStatement stmt = con.prepareStatement(
-                            "INSERT INTO announcements (title, description, date, is_pinned) VALUES (?, ?, ?, ?)")) {
+                            "INSERT INTO announcements (title, description, date, is_pinned, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)")) {
                         stmt.setString(1, title);
                         stmt.setString(2, desc);
                         stmt.setString(3, dateStr);
                         stmt.setBoolean(4, isPinned);
+                        setEventDate(stmt, 5, eventDate);
+                        setEventTime(stmt, 6, eventTime);
                         stmt.executeUpdate();
                     }
                 }
@@ -243,6 +262,9 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
         inputTitle.setText(announcement.getTitle());
         inputDesc.setText(announcement.getDescription());
         chkPinned.setChecked(announcement.isPinned());
+        draftEventDate = announcement.getEventDate() == null ? "" : announcement.getEventDate();
+        draftEventTime = announcement.getEventTime() == null ? "" : announcement.getEventTime();
+        bindEventPickers(dialogView, draftEventDate, draftEventTime);
 
         AlertDialog dialog = showFullScreenDialog(dialogView);
 
@@ -259,13 +281,16 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 return;
             }
 
-            databaseHelper.updateAnnouncement(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
-            updateAnnouncementOnMSSQL(announcement.getId(), announcement.getTitle(), title, desc, isPinned);
+            databaseHelper.updateAnnouncement(announcement.getId(), announcement.getTitle(), title, desc,
+                    isPinned, draftEventDate, draftEventTime);
+            updateAnnouncementOnMSSQL(announcement.getId(), announcement.getTitle(), title, desc,
+                    isPinned, draftEventDate, draftEventTime);
             dialog.dismiss();
         });
     }
 
-    private void updateAnnouncementOnMSSQL(int id, String oldTitle, String newTitle, String desc, boolean isPinned) {
+    private void updateAnnouncementOnMSSQL(int id, String oldTitle, String newTitle, String desc,
+                                           boolean isPinned, String eventDate, String eventTime) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
 
@@ -274,12 +299,14 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
                     try (PreparedStatement stmt = con.prepareStatement(
-                            "UPDATE announcements SET title = ?, description = ?, is_pinned = ? WHERE id = ? OR title = ?")) {
+                            "UPDATE announcements SET title = ?, description = ?, is_pinned = ?, event_date = ?, event_time = ? WHERE id = ? OR title = ?")) {
                         stmt.setString(1, newTitle);
                         stmt.setString(2, desc);
                         stmt.setBoolean(3, isPinned);
-                        stmt.setInt(4, id);
-                        stmt.setString(5, oldTitle);
+                        setEventDate(stmt, 4, eventDate);
+                        setEventTime(stmt, 5, eventTime);
+                        stmt.setInt(6, id);
+                        stmt.setString(7, oldTitle);
                         stmt.executeUpdate();
                     }
                 }
@@ -291,6 +318,67 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 loadAnnouncements();
             });
         });
+    }
+
+    private void bindEventPickers(View dialogView, String initialDate, String initialTime) {
+        TextView dateValue = dialogView.findViewById(R.id.txtEventDate);
+        TextView timeValue = dialogView.findViewById(R.id.txtEventTime);
+        dateValue.setText(initialDate == null || initialDate.isEmpty()
+                ? getString(R.string.calendar_event_date_optional) : initialDate);
+        timeValue.setText(initialTime == null || initialTime.isEmpty()
+                ? getString(R.string.calendar_event_time_optional) : displayTime(initialTime));
+
+        dialogView.findViewById(R.id.btnEventDate).setOnClickListener(v -> {
+            Calendar initial = Calendar.getInstance();
+            if (draftEventDate != null && !draftEventDate.isEmpty()) {
+                try {
+                    Date parsed = new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(draftEventDate);
+                    if (parsed != null) initial.setTime(parsed);
+                } catch (Exception ignored) { }
+            }
+            new DatePickerDialog(this, (picker, year, month, day) -> {
+                Calendar chosen = Calendar.getInstance();
+                chosen.set(year, month, day);
+                draftEventDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(chosen.getTime());
+                dateValue.setText(draftEventDate);
+            }, initial.get(Calendar.YEAR), initial.get(Calendar.MONTH),
+                    initial.get(Calendar.DAY_OF_MONTH)).show();
+        });
+
+        dialogView.findViewById(R.id.btnEventTime).setOnClickListener(v -> {
+            Calendar initial = Calendar.getInstance();
+            if (draftEventTime != null && !draftEventTime.isEmpty()) {
+                try {
+                    String[] parts = draftEventTime.split(":");
+                    initial.set(Calendar.HOUR_OF_DAY, Integer.parseInt(parts[0]));
+                    initial.set(Calendar.MINUTE, Integer.parseInt(parts[1]));
+                } catch (Exception ignored) { }
+            }
+            new TimePickerDialog(this, (picker, hour, minute) -> {
+                draftEventTime = String.format(Locale.US, "%02d:%02d:00", hour, minute);
+                timeValue.setText(displayTime(draftEventTime));
+            }, initial.get(Calendar.HOUR_OF_DAY), initial.get(Calendar.MINUTE), false).show();
+        });
+    }
+
+    private String displayTime(String value) {
+        if (value == null || value.isEmpty()) return "";
+        try {
+            Date parsed = new SimpleDateFormat("HH:mm:ss", Locale.US).parse(value);
+            return parsed == null ? value : new SimpleDateFormat("h:mm a", Locale.getDefault()).format(parsed);
+        } catch (Exception ignored) {
+            return value;
+        }
+    }
+
+    private void setEventDate(PreparedStatement statement, int index, String value) throws SQLException {
+        if (value == null || value.isEmpty()) statement.setNull(index, java.sql.Types.DATE);
+        else statement.setDate(index, java.sql.Date.valueOf(value));
+    }
+
+    private void setEventTime(PreparedStatement statement, int index, String value) throws SQLException {
+        if (value == null || value.isEmpty()) statement.setNull(index, java.sql.Types.TIME);
+        else statement.setTime(index, java.sql.Time.valueOf(value));
     }
 
     private void showDeleteConfirmationDialog(Announcement announcement) {

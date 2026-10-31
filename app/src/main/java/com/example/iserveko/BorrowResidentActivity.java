@@ -31,7 +31,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,6 +52,8 @@ public class BorrowResidentActivity extends AppCompatActivity {
 
     private int availableTables = 20;
     private int availableChairs = 150;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,6 +120,12 @@ public class BorrowResidentActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ioExecutor.shutdown();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         loadUserDetails();
@@ -150,47 +157,63 @@ public class BorrowResidentActivity extends AppCompatActivity {
     }
 
     private void loadInventoryAndRequests() {
-        // 1. Fetch real-time available stock
-        String stockQuery = "SELECT item_name, available_quantity FROM borrow_inventory";
+        String stockQuery = "SELECT item_name, total_quantity, available_quantity FROM borrow_inventory";
         connect_sql.executeQueryAsync(stockQuery, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
+                int[] remote = {-1, -1, -1, -1};
                 try {
-                    boolean found = false;
                     while (rs != null && rs.next()) {
-                        found = true;
                         String item = rs.getString("item_name");
-                        int avail = rs.getInt("available_quantity");
                         if ("Table".equalsIgnoreCase(item)) {
-                            availableTables = avail;
+                            remote[0] = rs.getInt("total_quantity");
+                            remote[1] = rs.getInt("available_quantity");
                         } else if ("Chair".equalsIgnoreCase(item)) {
-                            availableChairs = avail;
+                            remote[2] = rs.getInt("total_quantity");
+                            remote[3] = rs.getInt("available_quantity");
                         }
                     }
-                    if (!found) {
-                        loadLocalInventory();
-                    }
                 } catch (SQLException e) {
-                    Log.e("MSSQL_STOCK_ERR", e.getMessage(), e);
-                    loadLocalInventory();
+                    Log.e("MSSQL_STOCK_ERR", String.valueOf(e.getMessage()), e);
                 }
-                updateInventoryDisplay();
-                loadRequestsList();
+                loadInventorySnapshot(remote);
             }
 
             @Override
             public void onError(Exception e) {
-                loadLocalInventory();
-                updateInventoryDisplay();
-                loadRequestsList();
+                loadInventorySnapshot(new int[]{-1, -1, -1, -1});
             }
         });
     }
 
-    private void loadLocalInventory() {
-        int[] inv = databaseHelper.getAvailableInventory();
-        availableTables = inv[0];
-        availableChairs = inv[1];
+    private void loadInventorySnapshot(int[] remote) {
+        ioExecutor.execute(() -> {
+            int[] local = databaseHelper.getAvailableInventory();
+            int tables = remote[1] >= 0 ? remote[1] : local[0];
+            int chairs = remote[3] >= 0 ? remote[3] : local[1];
+            if (remote[0] >= 0 && remote[1] >= 0) {
+                databaseHelper.syncInventoryItem("Table", remote[0], remote[1]);
+            }
+            if (remote[2] >= 0 && remote[3] >= 0) {
+                databaseHelper.syncInventoryItem("Chair", remote[2], remote[3]);
+            }
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                availableTables = tables;
+                availableChairs = chairs;
+                updateInventoryDisplay();
+                loadRequestsList();
+            });
+        });
+    }
+
+    private void loadLocalRequestsForResident() {
+        ioExecutor.execute(() -> {
+            List<BorrowRequest> requests = databaseHelper.getBorrowRequestsForResident(residentEmail);
+            mainHandler.post(() -> {
+                if (!isFinishing() && !isDestroyed()) bindAdapter(requests);
+            });
+        });
     }
 
     private void updateInventoryDisplay() {
@@ -226,12 +249,12 @@ public class BorrowResidentActivity extends AppCompatActivity {
                 } catch (SQLException e) {
                     Log.e("MSSQL_REQ_ERR", e.getMessage(), e);
                 }
-                bindAdapter(databaseHelper.getBorrowRequestsForResident(residentEmail));
+                loadLocalRequestsForResident();
             }
 
             @Override
             public void onError(Exception e) {
-                bindAdapter(databaseHelper.getBorrowRequestsForResident(residentEmail));
+                loadLocalRequestsForResident();
             }
         });
     }
@@ -375,10 +398,6 @@ public class BorrowResidentActivity extends AppCompatActivity {
 
                     String reqDate = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(new Date());
 
-                    // SQLite local fallback
-                    databaseHelper.addBorrowRequest(residentEmail, residentName, tables, chairs, borrowDate, purpose, reqDate);
-
-                    // MSSQL insert
                     submitRequestToMSSQL(residentEmail, residentName, tables, chairs, borrowDate, purpose, reqDate);
                 })
                 .setNegativeButton("Cancel", null)
@@ -386,47 +405,28 @@ public class BorrowResidentActivity extends AppCompatActivity {
     }
 
     private void submitRequestToMSSQL(String email, String name, int tables, int chairs, String borrowDate, String purpose, String reqDate) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
-                if (con != null) {
-                    Statement stmt = con.createStatement();
-
-                    // Check if tables exist first
-                    String checkTable = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'borrow_requests') "
-                            + "CREATE TABLE borrow_requests ("
-                            + "id INT IDENTITY(1,1) PRIMARY KEY, "
-                            + "resident_email VARCHAR(100) NOT NULL, "
-                            + "resident_name VARCHAR(100) NOT NULL, "
-                            + "tables_requested INT NOT NULL DEFAULT 0, "
-                            + "chairs_requested INT NOT NULL DEFAULT 0, "
-                            + "borrow_date VARCHAR(50) NOT NULL, "
-                            + "purpose VARCHAR(255) NOT NULL, "
-                            + "status VARCHAR(20) NOT NULL DEFAULT 'Pending', "
-                            + "request_date VARCHAR(50) NOT NULL, "
-                            + "remarks VARCHAR(255) NULL);";
-                    stmt.executeUpdate(checkTable);
-
-                    try (PreparedStatement ps = con.prepareStatement(
+        ioExecutor.execute(() -> {
+            databaseHelper.addBorrowRequest(email, name, tables, chairs, borrowDate, purpose, reqDate);
+            try (Connection connection = connect_sql.getConnection()) {
+                if (connection != null) {
+                    try (PreparedStatement insert = connection.prepareStatement(
                             "INSERT INTO borrow_requests (resident_email, resident_name, tables_requested, chairs_requested, borrow_date, purpose, status, request_date, remarks) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?, '')")) {
-                        ps.setString(1, email);
-                        ps.setString(2, name);
-                        ps.setInt(3, tables);
-                        ps.setInt(4, chairs);
-                        ps.setString(5, borrowDate);
-                        ps.setString(6, purpose);
-                        ps.setString(7, reqDate);
-                        ps.executeUpdate();
+                        insert.setString(1, email);
+                        insert.setString(2, name);
+                        insert.setInt(3, tables);
+                        insert.setInt(4, chairs);
+                        insert.setString(5, borrowDate);
+                        insert.setString(6, purpose);
+                        insert.setString(7, reqDate);
+                        insert.executeUpdate();
                     }
                 }
             } catch (Exception e) {
-                Log.e("MSSQL_SUBMIT_ERR", e.getMessage(), e);
+                Log.e("MSSQL_SUBMIT_ERR", String.valueOf(e.getMessage()), e);
             }
-            handler.post(() -> {
-                Toast.makeText(BorrowResidentActivity.this, "Borrowing request submitted successfully!", Toast.LENGTH_SHORT).show();
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                Toast.makeText(this, R.string.borrow_request_submitted, Toast.LENGTH_SHORT).show();
                 loadInventoryAndRequests();
             });
         });
@@ -436,33 +436,37 @@ public class BorrowResidentActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Cancel Borrow Request")
                 .setMessage("Are you sure you want to cancel this pending borrowing request?")
-                .setPositiveButton("Yes, Cancel", (dialog, which) -> {
-                    databaseHelper.cancelBorrowRequest(request.getId());
-                    cancelRequestOnMSSQL(request.getId());
-                })
+                .setPositiveButton("Yes, Cancel", (dialog, which) -> cancelRequestOnMSSQL(request))
                 .setNegativeButton("No", null)
                 .show();
     }
 
-    private void cancelRequestOnMSSQL(int id) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
-                if (con != null) {
-                    try (PreparedStatement ps = con.prepareStatement(
+    private void cancelRequestOnMSSQL(BorrowRequest request) {
+        ioExecutor.execute(() -> {
+            boolean connected = false;
+            boolean cancelled = false;
+            try (Connection connection = connect_sql.getConnection()) {
+                if (connection != null) {
+                    connected = true;
+                    try (PreparedStatement delete = connection.prepareStatement(
                             "DELETE FROM borrow_requests WHERE id = ? AND status = 'Pending'")) {
-                        ps.setInt(1, id);
-                        ps.executeUpdate();
+                        delete.setInt(1, request.getId());
+                        cancelled = delete.executeUpdate() == 1;
                     }
                 }
             } catch (Exception e) {
-                Log.e("MSSQL_CANCEL_ERR", e.getMessage(), e);
+                Log.e("MSSQL_CANCEL_ERR", String.valueOf(e.getMessage()), e);
             }
-            handler.post(() -> {
-                Toast.makeText(BorrowResidentActivity.this, "Request cancelled.", Toast.LENGTH_SHORT).show();
+
+            boolean localCancelled = false;
+            if (cancelled || !connected) {
+                localCancelled = databaseHelper.cancelBorrowRequest(request.getId());
+            }
+            final boolean success = cancelled || localCancelled;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                Toast.makeText(this, success
+                        ? R.string.borrow_request_cancelled : R.string.borrow_action_failed, Toast.LENGTH_SHORT).show();
                 loadInventoryAndRequests();
             });
         });
@@ -473,46 +477,70 @@ public class BorrowResidentActivity extends AppCompatActivity {
                 .setTitle("Return Equipment")
                 .setMessage("Confirm return of " + request.getTablesRequested() + " table(s) and "
                         + request.getChairsRequested() + " chair(s) to the barangay?")
-                .setPositiveButton("Confirm Return", (dialog, which) -> {
-                    databaseHelper.updateBorrowRequestStatus(request.getId(), "Returned",
-                            request.getTablesRequested(), request.getChairsRequested(), "Returned by Resident");
-                    returnEquipmentOnMSSQL(request);
-                })
+                .setPositiveButton("Confirm Return", (dialog, which) -> returnEquipmentOnMSSQL(request))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
     private void returnEquipmentOnMSSQL(BorrowRequest request) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
-                if (con != null) {
-                    try (PreparedStatement requestUpdate = con.prepareStatement(
-                            "UPDATE borrow_requests SET status = 'Returned', remarks = 'Returned by Resident' WHERE id = ?")) {
-                        requestUpdate.setInt(1, request.getId());
-                        requestUpdate.executeUpdate();
-                    }
-                    try (PreparedStatement tableUpdate = con.prepareStatement(
-                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = 'Table'");
-                         PreparedStatement chairUpdate = con.prepareStatement(
-                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = 'Chair'")) {
-                        tableUpdate.setInt(1, request.getTablesRequested());
-                        tableUpdate.executeUpdate();
-                        chairUpdate.setInt(1, request.getChairsRequested());
-                        chairUpdate.executeUpdate();
+        ioExecutor.execute(() -> {
+            boolean connected = false;
+            boolean returned = false;
+            try (Connection connection = connect_sql.getConnection()) {
+                if (connection != null) {
+                    connected = true;
+                    boolean previousAutoCommit = connection.getAutoCommit();
+                    connection.setAutoCommit(false);
+                    try {
+                        int statusRows;
+                        try (PreparedStatement update = connection.prepareStatement(
+                                "UPDATE borrow_requests SET status = 'Returned', remarks = ? WHERE id = ? AND status = 'Approved'")) {
+                            update.setString(1, "Returned by Resident");
+                            update.setInt(2, request.getId());
+                            statusRows = update.executeUpdate();
+                        }
+                        boolean stockUpdated = statusRows == 1
+                                && increaseCloudStock(connection, "Table", request.getTablesRequested())
+                                && increaseCloudStock(connection, "Chair", request.getChairsRequested());
+                        returned = statusRows == 1 && stockUpdated;
+                        if (returned) connection.commit();
+                        else connection.rollback();
+                    } catch (Exception e) {
+                        connection.rollback();
+                        throw e;
+                    } finally {
+                        connection.setAutoCommit(previousAutoCommit);
                     }
                 }
             } catch (Exception e) {
-                Log.e("MSSQL_RET_ERR", e.getMessage(), e);
+                Log.e("MSSQL_RET_ERR", String.valueOf(e.getMessage()), e);
             }
-            handler.post(() -> {
-                Toast.makeText(BorrowResidentActivity.this, "Equipment marked as returned. Thank you!", Toast.LENGTH_SHORT).show();
+
+            boolean offlineSaved = false;
+            if (!connected) {
+                offlineSaved = databaseHelper.updateBorrowRequestStatus(request.getId(), "Returned",
+                        request.getTablesRequested(), request.getChairsRequested(), "Returned by Resident");
+            } else if (returned) {
+                databaseHelper.cacheBorrowRequestStatus(request.getId(), "Returned", "Returned by Resident");
+            }
+            final boolean success = returned || offlineSaved;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                Toast.makeText(this, success ? R.string.borrow_return_success : R.string.borrow_action_failed,
+                        Toast.LENGTH_SHORT).show();
                 loadInventoryAndRequests();
             });
         });
+    }
+
+    private boolean increaseCloudStock(Connection connection, String itemName, int quantity) throws SQLException {
+        if (quantity == 0) return true;
+        try (PreparedStatement update = connection.prepareStatement(
+                "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = ?")) {
+            update.setInt(1, quantity);
+            update.setString(2, itemName);
+            return update.executeUpdate() == 1;
+        }
     }
 
     private void goBackToDashboard() {

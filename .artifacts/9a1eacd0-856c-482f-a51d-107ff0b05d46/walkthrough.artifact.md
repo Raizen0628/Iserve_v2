@@ -13,19 +13,14 @@ I have implemented the "Emergency & Community Services" page for the iServeKo ap
 
 ### 2. Logic & Functionality
 - **[Service.java](file:///C:/Users/raiji/AndroidStudioProjects/IServeKo/app/src/main/java/com/example/iserveko/Service.java)**:
-    - Implemented `setupDialerCard` helper to wire each card to the system dialer (`Intent.ACTION_DIAL`).
+    - Emergency contacts now come from the central `EmergencyContacts` directory. Cards open the dialer, open SMS, or copy a number with a long press.
     - Configured the back button to close the activity.
     - Handled `BottomNavigationView` navigation logic to return to the dashboard.
 - **[ResidentDashboardActivity.java](file:///C:/Users/raiji/AndroidStudioProjects/IServeKo/app/src/main/java/com/example/iserveko/ResidentDashboardActivity.java)**: Connected the "Emergency Hotline" dashboard card and the bottom navigation "Services" item to the new page.
 - **[OfficialDashboardActivity.java](file:///C:/Users/raiji/AndroidStudioProjects/IServeKo/app/src/main/java/com/example/iserveko/OfficialDashboardActivity.java)**: Connected the bottom navigation "Services" item to the new page.
 
-### 3. Contact Numbers Integrated
-The following contacts are now functional (clicking the card opens the dialer with the number pre-filled):
-*   🚨 **Emergency Hotline**: `911`
-*   🚔 **Barangay Tanod**: `0955 396 5812`
-*   🚑 **Ambulance / Medical Emergency**: `0917 123 4567`
-*   🏥 **Barangay Health Center**: `0918 234 5678`
-*   🏛️ **Barangay Hall**: `0919 345 6789`
+### 3. Emergency Contact Directory
+Mobile contact data is centralized in `EmergencyContacts.java`. Contacts without a verified mobile number display a placeholder. The national emergency short code remains a separate exception.
 
 ## Verification
 - Verified that all service cards are present and styled correctly according to the requested modern/teal theme.

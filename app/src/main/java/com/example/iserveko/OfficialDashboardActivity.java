@@ -102,8 +102,10 @@ public class OfficialDashboardActivity extends AppCompatActivity {
                     } else if (which == 1) {
                         startActivity(new Intent(this, BorrowOfficialActivity.class));
                     } else if (which == 2) {
-                        Intent intent = new Intent(this, MeetingRequestActivity.class);
-                        intent.putExtra("IS_OFFICIAL", true);
+                        Intent intent = new Intent(this, MeetingOfficialActivity.class);
+                        if (getIntent().hasExtra("EMAIL")) {
+                            intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                        }
                         startActivity(intent);
                     }
                 })

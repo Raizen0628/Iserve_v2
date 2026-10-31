@@ -1,7 +1,5 @@
 package com.example.iserveko;
 
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,30 +78,9 @@ public class BorrowAdapter extends RecyclerView.Adapter<BorrowAdapter.BorrowView
         holder.txtBorrowDate.setText(request.getBorrowDate());
         holder.txtPurpose.setText("Purpose: " + request.getPurpose());
 
-        // Status Badge styling
+        // Apply the shared status palette used by Document and Meeting requests.
         String status = request.getStatus();
-        holder.txtStatusBadge.setText(status.toUpperCase());
-        int badgeColor;
-        switch (status.toLowerCase()) {
-            case "approved":
-                badgeColor = Color.parseColor("#2E7D32"); // Green
-                break;
-            case "declined":
-                badgeColor = Color.parseColor("#C62828"); // Red
-                break;
-            case "returned":
-                badgeColor = Color.parseColor("#1565C0"); // Blue
-                break;
-            case "pending":
-            default:
-                badgeColor = Color.parseColor("#F57F17"); // Amber/Yellow
-                break;
-        }
-
-        GradientDrawable shape = new GradientDrawable();
-        shape.setCornerRadius(20);
-        shape.setColor(badgeColor);
-        holder.txtStatusBadge.setBackground(shape);
+        StatusColorUtil.applyBadge(holder.txtStatusBadge, status);
 
         // Remarks
         if (request.getRemarks() != null && !request.getRemarks().trim().isEmpty()) {

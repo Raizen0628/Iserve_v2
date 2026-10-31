@@ -128,7 +128,9 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
                         String desc = rs.getString("description");
                         String date = rs.getString("date");
                         boolean isPinned = rs.getInt("is_pinned") == 1;
-                        list.add(new Announcement(id, title, desc, date, isPinned));
+                        String eventDate = rs.getString("event_date");
+                        String eventTime = rs.getString("event_time");
+                        list.add(new Announcement(id, title, desc, date, isPinned, eventDate, eventTime));
                     }
 
                     adapter = new AnnouncementAdapter(list, false, null);

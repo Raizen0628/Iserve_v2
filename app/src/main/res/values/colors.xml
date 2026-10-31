@@ -51,4 +51,27 @@
     <color name="surface_light">#FFFFFFFF</color>
     <color name="announcement_bg">#FFEBEE</color>
     <color name="light_grey_stroke">#EEEEEE</color>
+
+    <!-- Document request badges keep dark text on pale, high-contrast fills. -->
+    <color name="status_pending_bg">#FFFFE0B2</color>
+    <color name="status_pending_fg">#FF6D2F00</color>
+    <color name="status_approved_bg">#FFC8E6C9</color>
+    <color name="status_approved_fg">#FF1B5E20</color>
+    <color name="status_ready_bg">#FFBBDEFB</color>
+    <color name="status_ready_fg">#FF0D47A1</color>
+    <color name="status_declined_bg">#FFFFCDD2</color>
+    <color name="status_declined_fg">#FFB71C1C</color>
+    <color name="stock_plenty_bg">#FFC8E6C9</color>
+    <color name="stock_plenty_fg">#FF1B5E20</color>
+    <color name="stock_low_bg">#FFFFE0B2</color>
+    <color name="stock_low_fg">#FF6D2F00</color>
+    <color name="stock_empty_bg">#FFFFCDD2</color>
+    <color name="stock_empty_fg">#FFB71C1C</color>
+
+    <color name="stock_red">#F44336</color>
+    <color name="calendar_announcement">#FFC62828</color>
+    <color name="calendar_announcement_container">#FFFFEBEE</color>
+    <color name="calendar_meeting">#FF1565C0</color>
+    <color name="calendar_meeting_container">#FFE3F2FD</color>
+
 </resources>

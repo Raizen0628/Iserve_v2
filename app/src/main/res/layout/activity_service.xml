@@ -27,9 +27,9 @@
                 android:layout_alignParentStart="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/back_label"
-                android:src="@drawable/ic_arrow_next"
                 android:rotation="180"
-                app:tint="#F44336" />
+                android:src="@drawable/ic_arrow_next"
+                app:tint="?attr/colorPrimary" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -43,7 +43,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/services_header"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
-                    android:textColor="@color/onSurface"
+                    android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold" />
 
                 <TextView
@@ -52,333 +52,88 @@
                     android:layout_marginTop="4dp"
                     android:text="@string/services_subtitle"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="@color/onSurfaceVariant" />
+                    android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
-
         </RelativeLayout>
-
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp"
             android:paddingTop="8dp"
             android:paddingBottom="80dp">
 
-            <!-- Emergency Hotline -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardEmergencyHotline"
-                style="?attr/materialCardViewElevatedStyle"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/emergencyContactsRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="@color/dash_red_light"
-                app:strokeWidth="1dp">
+                android:clipToPadding="false"
+                android:contentDescription="@string/emergency_contacts_description"
+                android:importantForAccessibility="yes"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/iconEmergency"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@color/dash_red_light"
-                        android:gravity="center"
-                        android:text="@string/emoji_emergency"
-                        android:textSize="24sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_toEndOf="@id/iconEmergency"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/emergency_hotline_title"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/emergency_hotline_desc"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/onSurfaceVariant" />
-                    </LinearLayout>
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Barangay Tanod -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardBarangayTanod"
-                style="?attr/materialCardViewElevatedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="@color/dash_blue_light"
-                app:strokeWidth="1dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/iconTanod"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@color/dash_blue_light"
-                        android:gravity="center"
-                        android:text="@string/emoji_tanod"
-                        android:textSize="24sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_toEndOf="@id/iconTanod"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/barangay_tanod_title"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/barangay_tanod_desc"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/onSurfaceVariant" />
-                    </LinearLayout>
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Ambulance / Medical -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardAmbulance"
-                style="?attr/materialCardViewElevatedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="@color/dash_teal_light"
-                app:strokeWidth="1dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/iconAmbulance"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@color/dash_teal_light"
-                        android:gravity="center"
-                        android:text="@string/emoji_ambulance"
-                        android:textSize="24sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_toEndOf="@id/iconAmbulance"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ambulance_medical_title"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ambulance_medical_desc"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/onSurfaceVariant" />
-                    </LinearLayout>
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Health Center -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardHealthCenter"
-                style="?attr/materialCardViewElevatedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="@color/dash_cyan_light"
-                app:strokeWidth="1dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/iconHealth"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@color/dash_cyan_light"
-                        android:gravity="center"
-                        android:text="@string/emoji_health"
-                        android:textSize="24sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_toEndOf="@id/iconHealth"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/health_center_title"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/health_center_desc"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/onSurfaceVariant" />
-                    </LinearLayout>
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Barangay Hall -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardBarangayHall"
-                style="?attr/materialCardViewElevatedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="@color/dash_purple_light"
-                app:strokeWidth="1dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/iconHall"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@color/dash_purple_light"
-                        android:gravity="center"
-                        android:text="@string/emoji_hall"
-                        android:textSize="24sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_toEndOf="@id/iconHall"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/barangay_hall_title"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/barangay_hall_desc"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/onSurfaceVariant" />
-                    </LinearLayout>
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Meeting Request Schedule -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardMeetingRequest"
                 style="?attr/materialCardViewElevatedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="20dp"
-                app:strokeColor="@color/dash_cyan_light"
+                app:cardElevation="2dp"
+                app:strokeColor="?attr/colorOutlineVariant"
                 app:strokeWidth="1dp">
 
-                <RelativeLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:padding="16dp">
 
                     <TextView
-                        android:id="@+id/iconMeeting"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:background="@color/dash_cyan_light"
+                        android:background="?attr/colorSecondaryContainer"
                         android:gravity="center"
-                        android:text="📅"
+                        android:text="@string/emoji_meeting_request"
                         android:textSize="24sp" />
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="16dp"
-                        android:layout_toEndOf="@id/iconMeeting"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
                         android:orientation="vertical">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="📅 Request Meeting Schedule"
+                            android:text="@string/meeting_request_card_title"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                            android:textColor="?attr/colorOnSurface"
                             android:textStyle="bold" />
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Schedule a meeting with barangay officials"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/meeting_request_card_description"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/onSurfaceVariant" />
+                            android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
-                </RelativeLayout>
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
@@ -387,7 +142,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/white"
+        android:background="?attr/colorSurface"
         app:elevation="8dp"
         app:itemIconTint="@color/nav_item_color"
         app:itemPaddingBottom="4dp"
