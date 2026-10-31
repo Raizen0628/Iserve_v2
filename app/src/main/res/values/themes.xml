@@ -11,15 +11,17 @@
         <item name="colorSecondaryContainer">@color/secondaryContainer</item>
         <item name="colorOnSecondaryContainer">@color/onSecondaryContainer</item>
 
-        <item name="android:colorBackground">@color/white</item>
+        <item name="android:colorBackground">@color/surface</item>
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/onSurface</item>
         <item name="colorSurfaceVariant">@color/surfaceVariant</item>
         <item name="colorOnSurfaceVariant">@color/onSurfaceVariant</item>
+        <item name="colorOutline">@color/outline</item>
 
-        <item name="android:statusBarColor">#F44336</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/primary</item>
+        <item name="android:windowActionModeOverlay">true</item>
     </style>
 
     <style name="Theme.IServeKo" parent="Base.Theme.IServeKo" />

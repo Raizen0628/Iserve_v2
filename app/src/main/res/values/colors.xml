@@ -12,45 +12,45 @@
     <color name="red">#F44336</color>
 
     <!-- Material 3 Red & White Palette (#F44336 & #FFFFFFFF) -->
-    <color name="primary">#F44336</color>
+    <color name="primary">#B3261E</color>
     <color name="onPrimary">#FFFFFFFF</color>
-    <color name="primaryContainer">#FFEBEE</color>
-    <color name="onPrimaryContainer">#F44336</color>
+    <color name="primaryContainer">#F9DEDC</color>
+    <color name="onPrimaryContainer">#410E0B</color>
 
-    <color name="secondary">#F44336</color>
+    <color name="secondary">#775A00</color>
     <color name="onSecondary">#FFFFFFFF</color>
-    <color name="secondaryContainer">#FFEBEE</color>
-    <color name="onSecondaryContainer">#F44336</color>
+    <color name="secondaryContainer">#FFDF91</color>
+    <color name="onSecondaryContainer">#251A00</color>
 
-    <color name="tertiary">#F44336</color>
+    <color name="tertiary">#386A20</color>
     <color name="onTertiary">#FFFFFFFF</color>
-    <color name="tertiaryContainer">#FFEBEE</color>
-    <color name="onTertiaryContainer">#F44336</color>
+    <color name="tertiaryContainer">#B7F397</color>
+    <color name="onTertiaryContainer">#082100</color>
 
-    <color name="surface">#FFFFFFFF</color>
-    <color name="onSurface">#FF000000</color>
-    <color name="surfaceVariant">#F5F5F5</color>
-    <color name="onSurfaceVariant">#616161</color>
-    <color name="outline">#BDBDBD</color>
+    <color name="surface">#FFFBFF</color>
+    <color name="onSurface">#201A19</color>
+    <color name="surfaceVariant">#F4EDEA</color>
+    <color name="onSurfaceVariant">#514442</color>
+    <color name="outline">#857370</color>
 
     <!-- Red & White Dashboard Palette -->
-    <color name="dash_blue">#F44336</color>
-    <color name="dash_purple">#F44336</color>
-    <color name="dash_teal">#F44336</color>
-    <color name="dash_orange">#F44336</color>
-    <color name="dash_red">#F44336</color>
-    <color name="dash_cyan">#F44336</color>
+    <color name="dash_blue">#315B8A</color>
+    <color name="dash_purple">#6750A4</color>
+    <color name="dash_teal">#006B5F</color>
+    <color name="dash_orange">#9A4D00</color>
+    <color name="dash_red">#B3261E</color>
+    <color name="dash_cyan">#00677D</color>
 
-    <color name="dash_blue_light">#FFEBEE</color>
-    <color name="dash_purple_light">#FFEBEE</color>
-    <color name="dash_teal_light">#FFEBEE</color>
-    <color name="dash_orange_light">#FFEBEE</color>
-    <color name="dash_red_light">#FFEBEE</color>
-    <color name="dash_cyan_light">#FFEBEE</color>
+    <color name="dash_blue_light">#E8F1FB</color>
+    <color name="dash_purple_light">#F0EAF9</color>
+    <color name="dash_teal_light">#DDF4EF</color>
+    <color name="dash_orange_light">#FFF0E1</color>
+    <color name="dash_red_light">#F9DEDC</color>
+    <color name="dash_cyan_light">#DDF3F8</color>
 
-    <color name="surface_light">#FFFFFFFF</color>
-    <color name="announcement_bg">#FFEBEE</color>
-    <color name="light_grey_stroke">#EEEEEE</color>
+    <color name="surface_light">#FFFBFF</color>
+    <color name="announcement_bg">#F9DEDC</color>
+    <color name="light_grey_stroke">#E7DEDC</color>
 
     <!-- Document request badges keep dark text on pale, high-contrast fills. -->
     <color name="status_pending_bg">#FFFFE0B2</color>

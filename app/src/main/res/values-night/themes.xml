@@ -1,7 +1,25 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<resources>
     <style name="Base.Theme.IServeKo" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">#F2B8B5</item>
+        <item name="colorOnPrimary">#601410</item>
+        <item name="colorPrimaryContainer">#8C1D18</item>
+        <item name="colorOnPrimaryContainer">#F9DEDC</item>
+        <item name="colorSecondary">#E8C66A</item>
+        <item name="colorOnSecondary">#3E2E00</item>
+        <item name="colorSecondaryContainer">#5A4300</item>
+        <item name="colorOnSecondaryContainer">#FFDF91</item>
+        <item name="colorTertiary">#9CD67D</item>
+        <item name="colorOnTertiary">#173807</item>
+        <item name="colorTertiaryContainer">#28500F</item>
+        <item name="colorOnTertiaryContainer">#B7F397</item>
+        <item name="android:colorBackground">#1C1B1B</item>
+        <item name="colorSurface">#1C1B1B</item>
+        <item name="colorOnSurface">#EAE1DF</item>
+        <item name="colorSurfaceVariant">#514442</item>
+        <item name="colorOnSurfaceVariant">#D6C2BE</item>
+        <item name="colorOutline">#9E8C88</item>
+        <item name="android:statusBarColor">#1C1B1B</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">#1C1B1B</item>
     </style>
 </resources>
