@@ -101,8 +101,8 @@ public class NotificationsActivity extends AppCompatActivity {
         List<NotificationItem> notificationItems = new ArrayList<>();
 
         // 1. Load Document Requests
-        String docQuery = "SELECT * FROM document_requests WHERE resident_email = '" + residentEmail.replace("'", "''") + "' ORDER BY id DESC";
-        connect_sql.executeQueryAsync(docQuery, new connect_sql.QueryCallback() {
+        String docQuery = "SELECT * FROM document_requests WHERE resident_email = ? ORDER BY id DESC";
+        connect_sql.executeQueryAsync(docQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {
@@ -150,8 +150,8 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     private void loadBorrowNotificationsAndBind(List<NotificationItem> notificationItems) {
-        String borrowQuery = "SELECT * FROM borrow_requests WHERE resident_email = '" + residentEmail.replace("'", "''") + "' ORDER BY id DESC";
-        connect_sql.executeQueryAsync(borrowQuery, new connect_sql.QueryCallback() {
+        String borrowQuery = "SELECT * FROM borrow_requests WHERE resident_email = ? ORDER BY id DESC";
+        connect_sql.executeQueryAsync(borrowQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {
@@ -202,8 +202,8 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     private void loadMeetingNotificationsAndBind(List<NotificationItem> notificationItems) {
-        String meetingQuery = "SELECT * FROM meeting_requests WHERE resident_email = '" + residentEmail.replace("'", "''") + "' ORDER BY id DESC";
-        connect_sql.executeQueryAsync(meetingQuery, new connect_sql.QueryCallback() {
+        String meetingQuery = "SELECT * FROM meeting_requests WHERE resident_email = ? ORDER BY id DESC";
+        connect_sql.executeQueryAsync(meetingQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {

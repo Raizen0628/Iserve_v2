@@ -32,7 +32,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -209,13 +209,14 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String sql = "INSERT INTO announcements (title, description, date, is_pinned) VALUES ('"
-                            + title.replace("'", "''") + "', '"
-                            + desc.replace("'", "''") + "', '"
-                            + dateStr + "', " + (isPinned ? 1 : 0) + ")";
-
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate(sql);
+                    try (PreparedStatement stmt = con.prepareStatement(
+                            "INSERT INTO announcements (title, description, date, is_pinned) VALUES (?, ?, ?, ?)")) {
+                        stmt.setString(1, title);
+                        stmt.setString(2, desc);
+                        stmt.setString(3, dateStr);
+                        stmt.setBoolean(4, isPinned);
+                        stmt.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_ADD_ANN_ERROR", e.getMessage(), e);
@@ -272,13 +273,15 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String sql = "UPDATE announcements SET title='" + newTitle.replace("'", "''")
-                            + "', description='" + desc.replace("'", "''")
-                            + "', is_pinned=" + (isPinned ? 1 : 0)
-                            + " WHERE id=" + id + " OR title='" + oldTitle.replace("'", "''") + "'";
-
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate(sql);
+                    try (PreparedStatement stmt = con.prepareStatement(
+                            "UPDATE announcements SET title = ?, description = ?, is_pinned = ? WHERE id = ? OR title = ?")) {
+                        stmt.setString(1, newTitle);
+                        stmt.setString(2, desc);
+                        stmt.setBoolean(3, isPinned);
+                        stmt.setInt(4, id);
+                        stmt.setString(5, oldTitle);
+                        stmt.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_UPDATE_ANN_ERROR", e.getMessage(), e);
@@ -310,9 +313,12 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String sql = "DELETE FROM announcements WHERE id=" + id + " OR title='" + title.replace("'", "''") + "'";
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate(sql);
+                    try (PreparedStatement stmt = con.prepareStatement(
+                            "DELETE FROM announcements WHERE id = ? OR title = ?")) {
+                        stmt.setInt(1, id);
+                        stmt.setString(2, title);
+                        stmt.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_DELETE_ANN_ERROR", e.getMessage(), e);

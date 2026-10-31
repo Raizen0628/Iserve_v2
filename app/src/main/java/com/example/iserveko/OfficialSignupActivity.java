@@ -14,7 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.sql.Connection;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -107,11 +107,16 @@ public class OfficialSignupActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String insertQuery = "INSERT INTO users (first_name, last_name, email, password, role, position) VALUES ('"
-                            + first + "', '" + last + "', '" + email + "', '" + password + "', 'Barangay Official', 'Official')";
-
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate(insertQuery);
+                    try (PreparedStatement stmt = con.prepareStatement(
+                            "INSERT INTO users (first_name, last_name, email, password, role, position) VALUES (?, ?, ?, ?, ?, ?)")) {
+                        stmt.setString(1, first);
+                        stmt.setString(2, last);
+                        stmt.setString(3, email);
+                        stmt.setString(4, password);
+                        stmt.setString(5, "Barangay Official");
+                        stmt.setString(6, "Official");
+                        stmt.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_OFFICIAL_REGISTER", e.getMessage(), e);

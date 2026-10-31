@@ -23,7 +23,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -121,8 +121,8 @@ public class profile extends AppCompatActivity {
     private void loadUserProfile() {
         if (residentEmail == null || residentEmail.isEmpty()) return;
 
-        String userQuery = "SELECT first_name, middle_name, last_name, email, address, mobile FROM users WHERE email = '" + residentEmail.replace("'", "''") + "'";
-        connect_sql.executeQueryAsync(userQuery, new connect_sql.QueryCallback() {
+        String userQuery = "SELECT first_name, middle_name, last_name, email, address, mobile FROM users WHERE email = ?";
+        connect_sql.executeQueryAsync(userQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {
@@ -211,8 +211,11 @@ public class profile extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate("UPDATE users SET password = '" + newPass.replace("'", "''") + "' WHERE email = '" + email.replace("'", "''") + "'");
+                    try (java.sql.PreparedStatement ps = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?")) {
+                        ps.setString(1, newPass);
+                        ps.setString(2, email);
+                        ps.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_PASS_ERR", e.getMessage(), e);

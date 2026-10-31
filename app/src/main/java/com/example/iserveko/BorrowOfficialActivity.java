@@ -22,6 +22,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.chip.ChipGroup;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -267,12 +268,20 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                             + "BEGIN CREATE TABLE borrow_inventory (item_name VARCHAR(50) PRIMARY KEY, total_quantity INT NOT NULL, available_quantity INT NOT NULL); "
                             + "INSERT INTO borrow_inventory VALUES ('Table', 20, 20), ('Chair', 150, 150); END");
 
-                    // Update request status
-                    stmt.executeUpdate("UPDATE borrow_requests SET status = 'Approved', remarks = 'Approved by Official' WHERE id = " + request.getId());
-
-                    // Deduct stock
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity - " + request.getTablesRequested() + " WHERE item_name = 'Table'");
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity - " + request.getChairsRequested() + " WHERE item_name = 'Chair'");
+                    try (PreparedStatement requestUpdate = con.prepareStatement(
+                            "UPDATE borrow_requests SET status = 'Approved', remarks = 'Approved by Official' WHERE id = ?")) {
+                        requestUpdate.setInt(1, request.getId());
+                        requestUpdate.executeUpdate();
+                    }
+                    try (PreparedStatement tableUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity - ? WHERE item_name = 'Table'");
+                         PreparedStatement chairUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity - ? WHERE item_name = 'Chair'")) {
+                        tableUpdate.setInt(1, request.getTablesRequested());
+                        tableUpdate.executeUpdate();
+                        chairUpdate.setInt(1, request.getChairsRequested());
+                        chairUpdate.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_APPROVE_ERR", e.getMessage(), e);
@@ -312,8 +321,12 @@ public class BorrowOfficialActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate("UPDATE borrow_requests SET status = 'Declined', remarks = '" + remarks.replace("'", "''") + "' WHERE id = " + id);
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "UPDATE borrow_requests SET status = 'Declined', remarks = ? WHERE id = ?")) {
+                        ps.setString(1, remarks);
+                        ps.setInt(2, id);
+                        ps.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_DECLINE_ERR", e.getMessage(), e);
@@ -349,12 +362,20 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                 if (con != null) {
                     Statement stmt = con.createStatement();
 
-                    // Update request status
-                    stmt.executeUpdate("UPDATE borrow_requests SET status = 'Returned', remarks = 'Items Returned' WHERE id = " + request.getId());
-
-                    // Restore stock
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + request.getTablesRequested() + " WHERE item_name = 'Table'");
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + request.getChairsRequested() + " WHERE item_name = 'Chair'");
+                    try (PreparedStatement requestUpdate = con.prepareStatement(
+                            "UPDATE borrow_requests SET status = 'Returned', remarks = 'Items Returned' WHERE id = ?")) {
+                        requestUpdate.setInt(1, request.getId());
+                        requestUpdate.executeUpdate();
+                    }
+                    try (PreparedStatement tableUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = 'Table'");
+                         PreparedStatement chairUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = 'Chair'")) {
+                        tableUpdate.setInt(1, request.getTablesRequested());
+                        tableUpdate.executeUpdate();
+                        chairUpdate.setInt(1, request.getChairsRequested());
+                        chairUpdate.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_RETURN_ERR", e.getMessage(), e);
@@ -420,8 +441,17 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                             + "BEGIN CREATE TABLE borrow_inventory (item_name VARCHAR(50) PRIMARY KEY, total_quantity INT NOT NULL, available_quantity INT NOT NULL); "
                             + "INSERT INTO borrow_inventory VALUES ('Table', 20, 20), ('Chair', 150, 150); END");
 
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + addTables + ", total_quantity = total_quantity + " + addTables + " WHERE item_name = 'Table'");
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + addChairs + ", total_quantity = total_quantity + " + addChairs + " WHERE item_name = 'Chair'");
+                    try (PreparedStatement tableUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ?, total_quantity = total_quantity + ? WHERE item_name = 'Table'");
+                         PreparedStatement chairUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ?, total_quantity = total_quantity + ? WHERE item_name = 'Chair'")) {
+                        tableUpdate.setInt(1, addTables);
+                        tableUpdate.setInt(2, addTables);
+                        tableUpdate.executeUpdate();
+                        chairUpdate.setInt(1, addChairs);
+                        chairUpdate.setInt(2, addChairs);
+                        chairUpdate.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_ADD_STOCK_ERR", e.getMessage(), e);

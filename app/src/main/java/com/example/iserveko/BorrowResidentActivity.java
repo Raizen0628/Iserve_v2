@@ -28,6 +28,7 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -126,8 +127,8 @@ public class BorrowResidentActivity extends AppCompatActivity {
 
     private void loadUserDetails() {
         if (residentEmail == null || residentEmail.isEmpty()) return;
-        String userQuery = "SELECT first_name, last_name FROM users WHERE email = '" + residentEmail.replace("'", "''") + "'";
-        connect_sql.executeQueryAsync(userQuery, new connect_sql.QueryCallback() {
+        String userQuery = "SELECT first_name, last_name FROM users WHERE email = ?";
+        connect_sql.executeQueryAsync(userQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {
@@ -198,8 +199,8 @@ public class BorrowResidentActivity extends AppCompatActivity {
     }
 
     private void loadRequestsList() {
-        String reqQuery = "SELECT * FROM borrow_requests WHERE resident_email = '" + residentEmail.replace("'", "''") + "' ORDER BY id DESC";
-        connect_sql.executeQueryAsync(reqQuery, new connect_sql.QueryCallback() {
+        String reqQuery = "SELECT * FROM borrow_requests WHERE resident_email = ? ORDER BY id DESC";
+        connect_sql.executeQueryAsync(reqQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {
@@ -409,16 +410,17 @@ public class BorrowResidentActivity extends AppCompatActivity {
                             + "remarks VARCHAR(255) NULL);";
                     stmt.executeUpdate(checkTable);
 
-                    String sql = "INSERT INTO borrow_requests (resident_email, resident_name, tables_requested, chairs_requested, borrow_date, purpose, status, request_date, remarks) VALUES ('"
-                            + email.replace("'", "''") + "', '"
-                            + name.replace("'", "''") + "', "
-                            + tables + ", "
-                            + chairs + ", '"
-                            + borrowDate.replace("'", "''") + "', '"
-                            + purpose.replace("'", "''") + "', 'Pending', '"
-                            + reqDate + "', '');";
-
-                    stmt.executeUpdate(sql);
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO borrow_requests (resident_email, resident_name, tables_requested, chairs_requested, borrow_date, purpose, status, request_date, remarks) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?, '')")) {
+                        ps.setString(1, email);
+                        ps.setString(2, name);
+                        ps.setInt(3, tables);
+                        ps.setInt(4, chairs);
+                        ps.setString(5, borrowDate);
+                        ps.setString(6, purpose);
+                        ps.setString(7, reqDate);
+                        ps.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_SUBMIT_ERR", e.getMessage(), e);
@@ -450,8 +452,11 @@ public class BorrowResidentActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate("DELETE FROM borrow_requests WHERE id = " + id + " AND status = 'Pending'");
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "DELETE FROM borrow_requests WHERE id = ? AND status = 'Pending'")) {
+                        ps.setInt(1, id);
+                        ps.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_CANCEL_ERR", e.getMessage(), e);
@@ -485,14 +490,20 @@ public class BorrowResidentActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    Statement stmt = con.createStatement();
-
-                    // Update request status to Returned
-                    stmt.executeUpdate("UPDATE borrow_requests SET status = 'Returned', remarks = 'Returned by Resident' WHERE id = " + request.getId());
-
-                    // Restore available stock
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + request.getTablesRequested() + " WHERE item_name = 'Table'");
-                    stmt.executeUpdate("UPDATE borrow_inventory SET available_quantity = available_quantity + " + request.getChairsRequested() + " WHERE item_name = 'Chair'");
+                    try (PreparedStatement requestUpdate = con.prepareStatement(
+                            "UPDATE borrow_requests SET status = 'Returned', remarks = 'Returned by Resident' WHERE id = ?")) {
+                        requestUpdate.setInt(1, request.getId());
+                        requestUpdate.executeUpdate();
+                    }
+                    try (PreparedStatement tableUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = 'Table'");
+                         PreparedStatement chairUpdate = con.prepareStatement(
+                            "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = 'Chair'")) {
+                        tableUpdate.setInt(1, request.getTablesRequested());
+                        tableUpdate.executeUpdate();
+                        chairUpdate.setInt(1, request.getChairsRequested());
+                        chairUpdate.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_RET_ERR", e.getMessage(), e);

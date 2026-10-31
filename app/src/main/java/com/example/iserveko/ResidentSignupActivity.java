@@ -14,7 +14,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.sql.Connection;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -82,11 +82,15 @@ public class ResidentSignupActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    String insertQuery = "INSERT INTO users (first_name, last_name, email, password, role) VALUES ('"
-                            + first + "', '" + last + "', '" + email + "', '" + password + "', 'Resident')";
-
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate(insertQuery);
+                    try (PreparedStatement stmt = con.prepareStatement(
+                            "INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)")) {
+                        stmt.setString(1, first);
+                        stmt.setString(2, last);
+                        stmt.setString(3, email);
+                        stmt.setString(4, password);
+                        stmt.setString(5, "Resident");
+                        stmt.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_REGISTER_ERROR", e.getMessage(), e);

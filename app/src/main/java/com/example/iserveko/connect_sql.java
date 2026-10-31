@@ -6,8 +6,8 @@ import android.util.Log;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -60,22 +60,52 @@ public class connect_sql {
     }
 
     public static void executeQueryAsync(String query, QueryCallback callback) {
+        executeQueryAsync(query, new Object[0], callback);
+    }
+
+    public static void executeQueryAsync(String query, Object[] parameters, QueryCallback callback) {
         Handler handler = new Handler(Looper.getMainLooper());
 
         EXECUTOR.execute(() -> {
+            Connection con = null;
+            PreparedStatement statement = null;
+            ResultSet resultSet = null;
             try {
-                Connection con = getConnection();
-                if (con != null) {
-                    Statement stmt = con.createStatement();
-                    ResultSet rs = stmt.executeQuery(query);
-                    handler.post(() -> callback.onSuccess(rs));
-                } else {
+                con = getConnection();
+                if (con == null) {
                     handler.post(() -> callback.onError(new Exception(
                             "Could not connect to Somee MSSQL Server. Check internet connection and Logcat (MSSQL_TRY_FAILED).")));
+                    return;
                 }
+
+                statement = con.prepareStatement(query);
+                for (int index = 0; index < parameters.length; index++) {
+                    statement.setObject(index + 1, parameters[index]);
+                }
+                resultSet = statement.executeQuery();
+
+                Connection finalConnection = con;
+                PreparedStatement finalStatement = statement;
+                ResultSet finalResultSet = resultSet;
+                handler.post(() -> {
+                    try {
+                        callback.onSuccess(finalResultSet);
+                    } finally {
+                        try { finalResultSet.close(); } catch (Exception ignored) { }
+                        try { finalStatement.close(); } catch (Exception ignored) { }
+                        try { finalConnection.close(); } catch (Exception ignored) { }
+                    }
+                });
+                con = null;
+                statement = null;
+                resultSet = null;
             } catch (Exception e) {
                 Log.e("MSSQL_QUERY_ERROR", "Query failed: " + e.getMessage());
                 handler.post(() -> callback.onError(e));
+            } finally {
+                try { if (resultSet != null) resultSet.close(); } catch (Exception ignored) { }
+                try { if (statement != null) statement.close(); } catch (Exception ignored) { }
+                try { if (con != null) con.close(); } catch (Exception ignored) { }
             }
         });
     }

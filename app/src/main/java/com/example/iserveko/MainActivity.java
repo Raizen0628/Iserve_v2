@@ -20,7 +20,7 @@ import androidx.core.view.WindowInsetsCompat;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -114,8 +114,11 @@ public class MainActivity extends AppCompatActivity {
             try {
                 Connection con = connect_sql.getConnection();
                 if (con != null) {
-                    Statement stmt = con.createStatement();
-                    stmt.executeUpdate("UPDATE users SET password = '" + newPass.replace("'", "''") + "' WHERE email = '" + email.replace("'", "''") + "'");
+                    try (java.sql.PreparedStatement ps = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?")) {
+                        ps.setString(1, newPass);
+                        ps.setString(2, email);
+                        ps.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_FORGOT_ERR", e.getMessage(), e);
@@ -125,9 +128,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void loginUser(String username, String password) {
         // 1. Check MSSQL Server First
-        String sqlQuery = "SELECT * FROM users WHERE email='" + username + "' AND password='" + password + "'";
+        String sqlQuery = "SELECT * FROM users WHERE email = ? AND password = ?";
 
-        connect_sql.executeQueryAsync(sqlQuery, new connect_sql.QueryCallback() {
+        connect_sql.executeQueryAsync(sqlQuery, new Object[]{username, password}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {

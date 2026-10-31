@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -222,8 +223,8 @@ public class DocumentRequestActivity extends AppCompatActivity {
 
         inputEmail.setText(residentEmail);
 
-        String userQuery = "SELECT first_name, middle_name, last_name, email, address, mobile FROM users WHERE email = '" + residentEmail.replace("'", "''") + "'";
-        connect_sql.executeQueryAsync(userQuery, new connect_sql.QueryCallback() {
+        String userQuery = "SELECT first_name, middle_name, last_name, email, address, mobile FROM users WHERE email = ?";
+        connect_sql.executeQueryAsync(userQuery, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {
@@ -373,17 +374,18 @@ public class DocumentRequestActivity extends AppCompatActivity {
                             + "remarks VARCHAR(255) NULL);";
                     stmt.executeUpdate(checkTable);
 
-                    String sql = "INSERT INTO document_requests (resident_email, full_name, document_type, address, contact_number, purpose, specific_details, status, request_date, remarks) VALUES ('"
-                            + email.replace("'", "''") + "', '"
-                            + name.replace("'", "''") + "', '"
-                            + docType.replace("'", "''") + "', '"
-                            + address.replace("'", "''") + "', '"
-                            + contact.replace("'", "''") + "', '"
-                            + purpose.replace("'", "''") + "', '"
-                            + specificDetails.replace("'", "''") + "', 'Pending', '"
-                            + reqDate + "', '');";
-
-                    stmt.executeUpdate(sql);
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO document_requests (resident_email, full_name, document_type, address, contact_number, purpose, specific_details, status, request_date, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?, '')")) {
+                        ps.setString(1, email);
+                        ps.setString(2, name);
+                        ps.setString(3, docType);
+                        ps.setString(4, address);
+                        ps.setString(5, contact);
+                        ps.setString(6, purpose);
+                        ps.setString(7, specificDetails);
+                        ps.setString(8, reqDate);
+                        ps.executeUpdate();
+                    }
                 }
             } catch (Exception e) {
                 Log.e("DOC_REQ_MSSQL_ERR", e.getMessage(), e);
@@ -398,8 +400,8 @@ public class DocumentRequestActivity extends AppCompatActivity {
     private void loadMyDocumentRequests() {
         if (residentEmail == null || residentEmail.isEmpty()) return;
 
-        String query = "SELECT * FROM document_requests WHERE resident_email = '" + residentEmail.replace("'", "''") + "' ORDER BY id DESC";
-        connect_sql.executeQueryAsync(query, new connect_sql.QueryCallback() {
+        String query = "SELECT * FROM document_requests WHERE resident_email = ? ORDER BY id DESC";
+        connect_sql.executeQueryAsync(query, new Object[]{residentEmail}, new connect_sql.QueryCallback() {
             @Override
             public void onSuccess(ResultSet rs) {
                 try {
