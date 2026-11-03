@@ -1,6 +1,5 @@
 package com.example.iserveko;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -31,12 +30,10 @@ public class Service extends AppCompatActivity {
 
         boolean isOfficial = getIntent().hasExtra("IS_OFFICIAL")
                 ? getIntent().getBooleanExtra("IS_OFFICIAL", false)
-                : getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-                        .getBoolean("is_official", false);
+                : SessionManager.isOfficial(this, false);
         String email = getIntent().hasExtra("EMAIL") && getIntent().getStringExtra("EMAIL") != null
                 ? getIntent().getStringExtra("EMAIL")
-                : getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-                        .getString("logged_in_email", "resident@iserveko.com");
+                : SessionManager.getEmail(this, "resident@iserveko.com");
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 

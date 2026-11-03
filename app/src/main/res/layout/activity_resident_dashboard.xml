@@ -49,9 +49,18 @@
                 </LinearLayout>
 
                 <TextView
+                    android:id="@+id/txtResidentGreeting"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
+                    android:text="Welcome"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                    android:textColor="@color/onSurfaceVariant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
                     android:text="@string/barangay_services"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
                     android:textColor="@color/onSurface"

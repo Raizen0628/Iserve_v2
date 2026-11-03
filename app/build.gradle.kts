@@ -1,9 +1,28 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
 
+val dbProperties = Properties().apply {
+    val propertiesFile = rootProject.file("local.properties")
+    require(propertiesFile.isFile) { "Create local.properties with the required db.* settings." }
+    propertiesFile.inputStream().use { load(it) }
+}
+
+fun requiredDbProperty(key: String): String =
+    dbProperties.getProperty(key)?.takeIf { it.isNotBlank() }
+        ?: error("Missing database setting " + key + " in local.properties")
+
+fun buildConfigString(value: String): String =
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 android {
     namespace = "com.example.iserveko"
+
+    buildFeatures {
+        buildConfig = true
+    }
     compileSdk {
         version = release(37)
     }
@@ -16,6 +35,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "MSSQL_SERVER", buildConfigString(requiredDbProperty("db.server")))
+        buildConfigField("String", "MSSQL_PORT", buildConfigString(requiredDbProperty("db.port")))
+        buildConfigField("String", "MSSQL_DATABASE", buildConfigString(requiredDbProperty("db.name")))
+        buildConfigField("String", "MSSQL_USERNAME", buildConfigString(requiredDbProperty("db.user")))
+        buildConfigField("String", "MSSQL_PASSWORD", buildConfigString(requiredDbProperty("db.password")))
     }
 
     buildTypes {

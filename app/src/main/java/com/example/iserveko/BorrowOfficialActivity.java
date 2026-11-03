@@ -36,7 +36,6 @@ import java.util.concurrent.Executors;
 
 public class BorrowOfficialActivity extends AppCompatActivity {
 
-    private DatabaseHelper databaseHelper;
     private RecyclerView recyclerView;
     private BorrowAdapter adapter;
     private LinearLayout layoutInventoryCards;
@@ -44,8 +43,8 @@ public class BorrowOfficialActivity extends AppCompatActivity {
     private View chairsInventoryCard;
     private ChipGroup chipGroupStatus;
 
-    private int availableTables = 20;
-    private int availableChairs = 150;
+    private int availableTables = -1;
+    private int availableChairs = -1;
     private String currentSelectedStatus = "All";
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
@@ -61,8 +60,6 @@ public class BorrowOfficialActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        databaseHelper = new DatabaseHelper(this);
 
         layoutInventoryCards = findViewById(R.id.layoutInventoryCards);
         tablesInventoryCard = createInventoryCard("Table", R.string.inventory_item_tables);
@@ -181,7 +178,13 @@ public class BorrowOfficialActivity extends AppCompatActivity {
     private void updateInventoryCard(View card, int available, int lowThreshold) {
         TextView availableText = card.findViewById(R.id.txtInventoryAvailable);
         TextView indicator = card.findViewById(R.id.txtStockIndicator);
+        if (available < 0) {
+            availableText.setText(R.string.inventory_unavailable);
+            indicator.setVisibility(View.GONE);
+            return;
+        }
         availableText.setText(getString(R.string.inventory_available_count, available));
+        indicator.setVisibility(View.VISIBLE);
 
         int background;
         int foreground;
@@ -235,33 +238,10 @@ public class BorrowOfficialActivity extends AppCompatActivity {
     }
 
     private void loadInventorySnapshot(int[] remote) {
-        ioExecutor.execute(() -> {
-            int[] local = databaseHelper.getAvailableInventory();
-            int tableAvailable = remote[1] >= 0 ? remote[1] : local[0];
-            int chairAvailable = remote[3] >= 0 ? remote[3] : local[1];
-            if (remote[0] >= 0 && remote[1] >= 0) {
-                databaseHelper.syncInventoryItem("Table", remote[0], remote[1]);
-            }
-            if (remote[2] >= 0 && remote[3] >= 0) {
-                databaseHelper.syncInventoryItem("Chair", remote[2], remote[3]);
-            }
-            mainHandler.post(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                availableTables = tableAvailable;
-                availableChairs = chairAvailable;
-                updateInventoryDisplay();
-                loadRequestsList();
-            });
-        });
-    }
-
-    private void loadLocalRequestsList() {
-        ioExecutor.execute(() -> {
-            List<BorrowRequest> localRequests = databaseHelper.getAllBorrowRequests();
-            mainHandler.post(() -> {
-                if (!isFinishing() && !isDestroyed()) bindAdapter(localRequests);
-            });
-        });
+        availableTables = remote[1];
+        availableChairs = remote[3];
+        updateInventoryDisplay();
+        loadRequestsList();
     }
 
     private void loadRequestsList() {
@@ -285,19 +265,20 @@ public class BorrowOfficialActivity extends AppCompatActivity {
 
                         list.add(new BorrowRequest(id, email, name, tables, chairs, borrowDate, purpose, status, reqDate, remarks));
                     }
-                    if (!list.isEmpty()) {
-                        bindAdapter(list);
-                        return;
-                    }
+                    bindAdapter(list);
                 } catch (SQLException e) {
-                    Log.e("MSSQL_REQ_ERR", e.getMessage(), e);
+                    Log.e("MSSQL_REQ_ERR", "Could not read borrowing requests.", e);
+                    bindAdapter(new ArrayList<>());
+                    Toast.makeText(BorrowOfficialActivity.this,
+                            "Could not load borrowing requests from SQL Server.", Toast.LENGTH_LONG).show();
                 }
-                loadLocalRequestsList();
             }
 
             @Override
             public void onError(Exception e) {
-                loadLocalRequestsList();
+                bindAdapter(new ArrayList<>());
+                Toast.makeText(BorrowOfficialActivity.this,
+                        "Connect to SQL Server to review borrowing requests.", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -383,24 +364,16 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                 Log.e("MSSQL_APPROVE_ERR", String.valueOf(e.getMessage()), e);
             }
 
-            boolean offlineSaved = false;
-            if (!connected) {
-                offlineSaved = databaseHelper.updateBorrowRequestStatus(request.getId(), "Approved",
-                        request.getTablesRequested(), request.getChairsRequested(), "Approved by Official");
-            } else if (approved) {
-                databaseHelper.cacheBorrowRequestStatus(request.getId(), "Approved", "Approved by Official");
-            }
-
-            final boolean success = approved || offlineSaved;
-            final boolean savedOffline = offlineSaved;
+            final boolean success = approved;
+            final boolean serverWasAvailable = connected;
             mainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 if (success) {
-                    Toast.makeText(this, getString(savedOffline
-                            ? R.string.borrow_action_saved_offline
-                            : R.string.borrow_approval_success), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.borrow_approval_success, Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, R.string.borrow_stock_unavailable, Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, serverWasAvailable
+                            ? R.string.borrow_stock_unavailable : R.string.borrow_action_failed,
+                            Toast.LENGTH_LONG).show();
                 }
                 loadInventoryAndRequests();
             });
@@ -438,11 +411,9 @@ public class BorrowOfficialActivity extends AppCompatActivity {
 
     private void declineRequestOnMSSQL(BorrowRequest request, String remarks) {
         ioExecutor.execute(() -> {
-            boolean connected = false;
             boolean updated = false;
             try (Connection connection = connect_sql.getConnection()) {
                 if (connection != null) {
-                    connected = true;
                     try (PreparedStatement update = connection.prepareStatement(
                             "UPDATE borrow_requests SET status = 'Declined', remarks = ? WHERE id = ? AND status = 'Pending'")) {
                         update.setString(1, remarks);
@@ -454,14 +425,7 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                 Log.e("MSSQL_DECLINE_ERR", String.valueOf(e.getMessage()), e);
             }
 
-            boolean offlineSaved = false;
-            if (!connected) {
-                offlineSaved = databaseHelper.updateBorrowRequestStatus(request.getId(), "Declined",
-                        request.getTablesRequested(), request.getChairsRequested(), remarks);
-            } else if (updated) {
-                databaseHelper.cacheBorrowRequestStatus(request.getId(), "Declined", remarks);
-            }
-            final boolean success = updated || offlineSaved;
+            final boolean success = updated;
             mainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 String message = getString(success
@@ -486,11 +450,9 @@ public class BorrowOfficialActivity extends AppCompatActivity {
 
     private void markReturnedOnMSSQL(BorrowRequest request) {
         ioExecutor.execute(() -> {
-            boolean connected = false;
             boolean returned = false;
             try (Connection connection = connect_sql.getConnection()) {
                 if (connection != null) {
-                    connected = true;
                     boolean previousAutoCommit = connection.getAutoCommit();
                     connection.setAutoCommit(false);
                     try {
@@ -518,14 +480,7 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                 Log.e("MSSQL_RETURN_ERR", String.valueOf(e.getMessage()), e);
             }
 
-            boolean offlineSaved = false;
-            if (!connected) {
-                offlineSaved = databaseHelper.updateBorrowRequestStatus(request.getId(), "Returned",
-                        request.getTablesRequested(), request.getChairsRequested(), "Items Returned");
-            } else if (returned) {
-                databaseHelper.cacheBorrowRequestStatus(request.getId(), "Returned", "Items Returned");
-            }
-            final boolean success = returned || offlineSaved;
+            final boolean success = returned;
             mainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 Toast.makeText(this, getString(success
@@ -538,9 +493,10 @@ public class BorrowOfficialActivity extends AppCompatActivity {
     private boolean increaseCloudStock(Connection connection, String itemName, int quantity) throws SQLException {
         if (quantity == 0) return true;
         try (PreparedStatement update = connection.prepareStatement(
-                "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = ?")) {
+                "UPDATE borrow_inventory SET available_quantity = available_quantity + ? WHERE item_name = ? AND available_quantity + ? <= total_quantity")) {
             update.setInt(1, quantity);
             update.setString(2, itemName);
+            update.setInt(3, quantity);
             return update.executeUpdate() == 1;
         }
     }
@@ -556,18 +512,6 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                         update.setInt(2, quantity);
                         update.setString(3, itemName);
                         updated = update.executeUpdate() == 1;
-                    }
-                    if (updated) {
-                        try (PreparedStatement query = connection.prepareStatement(
-                                "SELECT total_quantity, available_quantity FROM borrow_inventory WHERE item_name = ?")) {
-                            query.setString(1, itemName);
-                            try (ResultSet result = query.executeQuery()) {
-                                if (result.next()) {
-                                    databaseHelper.syncInventoryItem(itemName,
-                                            result.getInt("total_quantity"), result.getInt("available_quantity"));
-                                }
-                            }
-                        }
                     }
                 }
             } catch (Exception e) {

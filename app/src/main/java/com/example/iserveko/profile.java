@@ -1,12 +1,11 @@
 package com.example.iserveko;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,12 +28,10 @@ import java.util.concurrent.Executors;
 
 public class profile extends AppCompatActivity {
 
-    private DatabaseHelper databaseHelper;
     private TextView txtProfileName, txtProfileEmail, txtProfileAddress, txtProfileMobile;
     private EditText inputBio;
     private String residentEmail = "resident@iserveko.com";
     private boolean isOfficial = false;
-    private SharedPreferences profilePrefs;
     private final ExecutorService profileExecutor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -51,32 +48,38 @@ public class profile extends AppCompatActivity {
             return insets;
         });
 
-        databaseHelper = new DatabaseHelper(this);
-
         if (getIntent().hasExtra("EMAIL")) {
             residentEmail = getIntent().getStringExtra("EMAIL");
         } else {
-            residentEmail = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-                    .getString("logged_in_email", "resident@iserveko.com");
+            residentEmail = SessionManager.getEmail(this, "resident@iserveko.com");
         }
         isOfficial = getIntent().getBooleanExtra("IS_OFFICIAL", 
-                getSharedPreferences("UserSession", Context.MODE_PRIVATE).getBoolean("is_official", false));
+                SessionManager.isOfficial(this, false));
 
         txtProfileName = findViewById(R.id.txtProfileName);
         txtProfileEmail = findViewById(R.id.txtProfileEmail);
         txtProfileAddress = findViewById(R.id.txtProfileAddress);
         txtProfileMobile = findViewById(R.id.txtProfileMobile);
+        txtProfileName.setOnClickListener(v -> showEditNameDialog());
+        txtProfileAddress.setOnClickListener(v -> showEditProfileValueDialog(true));
+        txtProfileMobile.setOnClickListener(v -> showEditProfileValueDialog(false));
         inputBio = findViewById(R.id.inputBio);
-
+        String savedDisplayName = SessionManager.getDisplayName(this, "").trim();
+        txtProfileName.setText(savedDisplayName);
         txtProfileEmail.setText(residentEmail);
+        String savedAddress = SessionManager.getAddress(this, "");
+        String savedMobile = SessionManager.getMobile(this, "");
+        txtProfileAddress.setText(profileValueOrFallback(savedAddress));
+        txtProfileMobile.setText(profileValueOrFallback(savedMobile));
+        Log.d("PROFILE_SESSION", "Read session fields: address=" + savedAddress
+                + ", mobile=" + savedMobile);
 
-        profilePrefs = getSharedPreferences("UserProfilePrefs", Context.MODE_PRIVATE);
         findViewById(R.id.btnSaveBio).setOnClickListener(v -> saveBio());
 
         findViewById(R.id.btnChangePassword).setOnClickListener(v -> showChangePasswordDialog());
 
         findViewById(R.id.btnLogOut).setOnClickListener(v -> {
-            getSharedPreferences("UserSession", Context.MODE_PRIVATE).edit().clear().apply();
+            SessionManager.clearSession(this);
             Intent intent = new Intent(this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
@@ -113,23 +116,18 @@ public class profile extends AppCompatActivity {
             return false;
         });
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         loadUserProfile();
     }
 
     private void loadUserProfile() {
         if (residentEmail == null || residentEmail.trim().isEmpty()) return;
         profileExecutor.execute(() -> {
-            ProfileData profile = loadCloudProfile();
-            String[] local = databaseHelper.getUserProfileDetails(residentEmail);
-            if (profile == null && local != null) {
-                profile = new ProfileData(residentEmail, local[0], local[1], local[2],
-                        local[3], local[4], local[5]);
-            } else if (profile != null && (profile.bio == null || profile.bio.trim().isEmpty())
-                    && local != null && local[5] != null && !local[5].trim().isEmpty()) {
-                profile.bio = local[5];
-            }
-
-            ProfileData result = profile;
+            ProfileData result = loadCloudProfile();
             mainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 bindProfile(result);
@@ -168,40 +166,176 @@ public class profile extends AppCompatActivity {
             }
             return profile;
         } catch (Exception e) {
-            Log.w("PROFILE_LOAD", "Could not load the cloud profile; using the local profile.");
+            Log.e("PROFILE_LOAD", "Could not load the profile from SQL Server for " + residentEmail, e);
             return null;
         }
     }
 
     private void bindProfile(ProfileData profile) {
         if (profile != null) {
-            txtProfileName.setText(profile.name.isEmpty() ? residentEmail : profile.name);
-            txtProfileEmail.setText(profile.email.isEmpty() ? residentEmail : profile.email);
-            if (!profile.address.isEmpty()) txtProfileAddress.setText(profile.address);
-            if (!profile.mobile.isEmpty()) txtProfileMobile.setText(profile.mobile);
+            String name = profile.name.isEmpty()
+                    ? SessionManager.getDisplayName(this, "") : profile.name;
+            String email = profile.email.isEmpty() ? residentEmail : profile.email;
+            String address = profileValueOrFallback(profile.address);
+            String mobile = profileValueOrFallback(profile.mobile);
+            txtProfileName.setText(name);
+            txtProfileEmail.setText(email);
+            txtProfileAddress.setText(address);
+            txtProfileMobile.setText(mobile);
+            Log.d("PROFILE_LOAD", "SQL row for " + email + ": name=" + name
+                    + ", address=" + profile.address + ", mobile=" + profile.mobile);
+            SessionManager.saveUserSession(
+                    this,
+                    SessionManager.getUserId(this, ""),
+                    name,
+                    email,
+                    profile.address,
+                    profile.mobile,
+                    isOfficial);
+            android.util.Log.d("PROFILE_LOAD",
+                    "Loaded profile for " + email + ", name=" + name);
         }
 
         String remoteBio = profile == null ? "" : safe(profile.bio);
-        String storedBio = profilePrefs.getString(bioKey(), null);
-        boolean manuallyEdited = profilePrefs.getBoolean(bioEditedKey(), false)
-                || (storedBio != null && !storedBio.trim().isEmpty());
-        String value;
-        if (manuallyEdited) {
-            value = storedBio == null ? "" : storedBio;
-            profilePrefs.edit().putBoolean(bioEditedKey(), true).apply();
-        } else if (!remoteBio.trim().isEmpty()) {
-            value = remoteBio;
-        } else {
-            value = createGeneratedBio(profile);
+        inputBio.setText(remoteBio.isEmpty() ? createGeneratedBio(profile) : remoteBio);
+    }
+
+    private void showEditProfileValueDialog(boolean addressField) {
+        EditText valueInput = new EditText(this);
+        valueInput.setSingleLine(true);
+        valueInput.setInputType(addressField
+                ? android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                : android.text.InputType.TYPE_CLASS_PHONE);
+        TextView target = addressField ? txtProfileAddress : txtProfileMobile;
+        String currentValue = target.getText().toString();
+        valueInput.setText("Not set".equals(currentValue) ? "" : currentValue);
+
+        new AlertDialog.Builder(this)
+                .setTitle(addressField ? "Edit address" : "Edit mobile")
+                .setView(valueInput)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Save", (dialog, which) ->
+                        saveProfileValue(addressField, valueInput.getText().toString().trim()))
+                .show();
+    }
+
+    private void saveProfileValue(boolean addressField, String value) {
+        String column = addressField ? "address" : "mobile";
+        profileExecutor.execute(() -> {
+            boolean saved = false;
+            try (Connection connection = connect_sql.getConnection();
+                 PreparedStatement statement = connection == null ? null
+                         : connection.prepareStatement(
+                                 "UPDATE users SET " + column + " = ? WHERE email = ?")) {
+                if (statement != null) {
+                    statement.setString(1, value);
+                    statement.setString(2, residentEmail);
+                    saved = statement.executeUpdate() == 1;
+                }
+            } catch (Exception e) {
+                Log.e("PROFILE_CONTACT_SAVE", "SQL Server " + column + " update failed.", e);
+            }
+
+            boolean savedOnServer = saved;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (!savedOnServer) {
+                    Toast.makeText(this, "Could not save the change.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String address = addressField ? value : txtProfileAddress.getText().toString();
+                String mobile = addressField ? txtProfileMobile.getText().toString() : value;
+                if ("Not set".equals(address)) address = "";
+                if ("Not set".equals(mobile)) mobile = "";
+                (addressField ? txtProfileAddress : txtProfileMobile)
+                        .setText(profileValueOrFallback(value));
+                SessionManager.saveUserSession(
+                        this,
+                        SessionManager.getUserId(this, ""),
+                        txtProfileName.getText().toString(),
+                        residentEmail,
+                        address,
+                        mobile,
+                        isOfficial);
+                Toast.makeText(this, "Profile details saved.", Toast.LENGTH_SHORT).show();
+            });
+        });
+    }
+
+    private void showEditNameDialog() {
+        EditText nameInput = new EditText(this);
+        nameInput.setSingleLine(true);
+        nameInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        nameInput.setText(txtProfileName.getText());
+
+        new AlertDialog.Builder(this)
+                .setTitle("Edit name")
+                .setView(nameInput)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Save", (dialog, which) ->
+                        saveProfileName(nameInput.getText().toString().trim()))
+                .show();
+    }
+
+    private void saveProfileName(String fullName) {
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length < 2 || fullName.trim().isEmpty()) {
+            Toast.makeText(this, "Enter first and last name.", Toast.LENGTH_SHORT).show();
+            return;
         }
-        inputBio.setText(value);
+        String firstName = parts[0];
+        String lastName = parts[parts.length - 1];
+        StringBuilder middleName = new StringBuilder();
+        for (int index = 1; index < parts.length - 1; index++) {
+            if (middleName.length() > 0) middleName.append(' ');
+            middleName.append(parts[index]);
+        }
+
+        profileExecutor.execute(() -> {
+            boolean saved = false;
+            try (Connection connection = connect_sql.getConnection();
+                 PreparedStatement statement = connection == null ? null
+                         : connection.prepareStatement(
+                                 "UPDATE users SET first_name = ?, middle_name = ?, last_name = ? WHERE email = ?")) {
+                if (statement != null) {
+                    statement.setString(1, firstName);
+                    statement.setString(2, middleName.toString());
+                    statement.setString(3, lastName);
+                    statement.setString(4, residentEmail);
+                    saved = statement.executeUpdate() == 1;
+                }
+            } catch (Exception e) {
+                Log.e("PROFILE_NAME_SAVE", "SQL Server name update failed.", e);
+            }
+
+            boolean savedOnServer = saved;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (savedOnServer) {
+                    txtProfileName.setText(fullName);
+                    SessionManager.saveUserSession(
+                            this,
+                            SessionManager.getUserId(this, ""),
+                            fullName,
+                            residentEmail,
+                            txtProfileAddress.getText().toString(),
+                            txtProfileMobile.getText().toString(),
+                            isOfficial);
+                    Toast.makeText(this, "Name saved.", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Could not save the name.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
     }
 
     private void saveBio() {
         String bio = inputBio.getText() == null ? "" : inputBio.getText().toString().trim();
-        profilePrefs.edit().putString(bioKey(), bio).putBoolean(bioEditedKey(), true).apply();
+        View saveButton = findViewById(R.id.btnSaveBio);
+        saveButton.setEnabled(false);
         profileExecutor.execute(() -> {
-            boolean localSaved = databaseHelper.updateUserBio(residentEmail, bio);
             boolean cloudSaved = false;
             try (Connection connection = connect_sql.getConnection();
                  PreparedStatement statement = connection == null ? null
@@ -209,18 +343,19 @@ public class profile extends AppCompatActivity {
                 if (statement != null) {
                     statement.setString(1, bio);
                     statement.setString(2, residentEmail);
-                    cloudSaved = statement.executeUpdate() > 0;
+                    cloudSaved = statement.executeUpdate() == 1;
                 }
             } catch (Exception e) {
-                Log.w("PROFILE_BIO_SAVE", "Cloud bio save failed; the local bio remains saved.");
+                Log.w("PROFILE_BIO_SAVE", "SQL Server bio update failed.", e);
             }
 
-            boolean savedOnCloud = cloudSaved;
+            final boolean savedOnServer = cloudSaved;
             mainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
-                int message = savedOnCloud ? R.string.profile_bio_saved
-                        : localSaved ? R.string.profile_bio_saved_offline : R.string.profile_bio_save_error;
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                saveButton.setEnabled(true);
+                Toast.makeText(this, savedOnServer
+                        ? R.string.profile_bio_saved : R.string.profile_bio_save_error, Toast.LENGTH_SHORT).show();
+                if (savedOnServer) inputBio.setText(bio);
             });
         });
     }
@@ -242,8 +377,9 @@ public class profile extends AppCompatActivity {
         return getString(R.string.profile_bio_resident_default);
     }
 
-    private String bioKey() { return "bio_" + residentEmail; }
-    private String bioEditedKey() { return "bio_edited_" + residentEmail; }
+    private String profileValueOrFallback(String value) {
+        return value == null || value.trim().isEmpty() ? "Not set" : value.trim();
+    }
 
     private String joinName(String first, String middle, String last) {
         StringBuilder name = new StringBuilder();
@@ -258,7 +394,7 @@ public class profile extends AppCompatActivity {
 
     private String safe(String value) { return value == null ? "" : value.trim(); }
 
-    /** Holds user fields loaded from MSSQL or the local profile cache. */
+    /** Holds user fields loaded from SQL Server. */
     private static class ProfileData {
         final String email;
         final String name;
@@ -281,40 +417,10 @@ public class profile extends AppCompatActivity {
     }
 
     private void showChangePasswordDialog() {
-        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
-        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
-        layout.setPadding(48, 32, 48, 32);
-
-        final EditText inputNewPass = new EditText(this);
-        inputNewPass.setHint("Enter New Password");
-        inputNewPass.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD | android.text.InputType.TYPE_CLASS_TEXT);
-        layout.addView(inputNewPass);
-
-        final EditText inputConfirmPass = new EditText(this);
-        inputConfirmPass.setHint("Confirm New Password");
-        inputConfirmPass.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD | android.text.InputType.TYPE_CLASS_TEXT);
-        layout.addView(inputConfirmPass);
-
         new AlertDialog.Builder(this)
-                .setTitle("Change Password")
-                .setView(layout)
-                .setPositiveButton("Update", (dialog, which) -> {
-                    String newPass = inputNewPass.getText().toString().trim();
-                    String confirmPass = inputConfirmPass.getText().toString().trim();
-
-                    if (newPass.isEmpty() || confirmPass.isEmpty()) {
-                        Toast.makeText(this, "Please enter all fields.", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    if (!newPass.equals(confirmPass)) {
-                        Toast.makeText(this, "Passwords do not match.", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    databaseHelper.updatePassword(residentEmail, newPass);
-                    updatePasswordOnMSSQL(residentEmail, newPass);
-                })
-                .setNegativeButton("Cancel", null)
+                .setTitle("Password change unavailable")
+                .setMessage("Password changes are unavailable until secure password storage is configured on SQL Server.")
+                .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
 
@@ -322,27 +428,6 @@ public class profile extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         profileExecutor.shutdown();
-    }
-
-    private void updatePasswordOnMSSQL(String email, String newPass) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
-                if (con != null) {
-                    try (java.sql.PreparedStatement ps = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?")) {
-                        ps.setString(1, newPass);
-                        ps.setString(2, email);
-                        ps.executeUpdate();
-                    }
-                }
-            } catch (Exception e) {
-                Log.e("MSSQL_PASS_ERR", e.getMessage(), e);
-            }
-            handler.post(() -> Toast.makeText(profile.this, "Password updated successfully!", Toast.LENGTH_SHORT).show());
-        });
     }
 
 }

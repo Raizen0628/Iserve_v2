@@ -51,6 +51,8 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
     private AnnouncementAdapter adapter;
     private String draftEventDate = "";
     private String draftEventTime = "";
+    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,23 +129,29 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                         list.add(new Announcement(id, title, desc, date, isPinned, eventDate, eventTime));
                     }
 
-                    bindAdapter(list);
+                    bindAdapter(list, true);
                     return;
                 } catch (SQLException e) {
-                    Log.e("MSSQL_LOAD_ERROR", e.getMessage(), e);
+                    Log.e("MSSQL_LOAD_ERROR", "Could not read server announcements.", e);
                 }
-                bindAdapter(databaseHelper.getAllAnnouncements());
+                bindAdapter(databaseHelper.getAllAnnouncements(), false);
+                Toast.makeText(AnnouncementOfficialActivity.this,
+                        "Showing cached announcements. Editing is unavailable until SQL Server reconnects.",
+                        Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onError(Exception e) {
-                bindAdapter(databaseHelper.getAllAnnouncements());
+                bindAdapter(databaseHelper.getAllAnnouncements(), false);
+                Toast.makeText(AnnouncementOfficialActivity.this,
+                        "Showing cached announcements. Editing is unavailable until SQL Server reconnects.",
+                        Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void bindAdapter(List<Announcement> list) {
-        adapter = new AnnouncementAdapter(list, true, new AnnouncementAdapter.OnAnnouncementClickListener() {
+    private void bindAdapter(List<Announcement> list, boolean canEdit) {
+        adapter = new AnnouncementAdapter(list, canEdit, new AnnouncementAdapter.OnAnnouncementClickListener() {
             @Override
             public void onEditClick(Announcement announcement) {
                 showEditDialog(announcement);
@@ -211,20 +219,17 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
 
             String dateStr = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(new Date());
 
-            databaseHelper.addAnnouncement(title, desc, dateStr, isPinned, draftEventDate, draftEventTime);
-            addAnnouncementToMSSQL(title, desc, dateStr, isPinned, draftEventDate, draftEventTime);
-            dialog.dismiss();
+            btnPost.setEnabled(false);
+            addAnnouncementToMSSQL(title, desc, dateStr, isPinned, draftEventDate, draftEventTime,
+                    dialog, btnPost);
         });
     }
 
     private void addAnnouncementToMSSQL(String title, String desc, String dateStr, boolean isPinned,
-                                        String eventDate, String eventTime) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
+                                        String eventDate, String eventTime, AlertDialog dialog, Button submitButton) {
+        ioExecutor.execute(() -> {
+            boolean saved = false;
+            try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
                     try (PreparedStatement stmt = con.prepareStatement(
                             "INSERT INTO announcements (title, description, date, is_pinned, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)")) {
@@ -234,15 +239,23 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                         stmt.setBoolean(4, isPinned);
                         setEventDate(stmt, 5, eventDate);
                         setEventTime(stmt, 6, eventTime);
-                        stmt.executeUpdate();
+                        saved = stmt.executeUpdate() == 1;
                     }
                 }
             } catch (Exception e) {
-                Log.e("MSSQL_ADD_ANN_ERROR", e.getMessage(), e);
+                Log.e("MSSQL_ADD_ANN_ERROR", "Announcement insert failed.", e);
             }
-            handler.post(() -> {
-                Toast.makeText(AnnouncementOfficialActivity.this, "Announcement posted!", Toast.LENGTH_SHORT).show();
-                loadAnnouncements();
+            final boolean savedOnServer = saved;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (savedOnServer) {
+                    dialog.dismiss();
+                    Toast.makeText(this, "Announcement posted!", Toast.LENGTH_SHORT).show();
+                    loadAnnouncements();
+                } else {
+                    submitButton.setEnabled(true);
+                    Toast.makeText(this, "Could not post announcement to SQL Server.", Toast.LENGTH_LONG).show();
+                }
             });
         });
     }
@@ -281,41 +294,43 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 return;
             }
 
-            databaseHelper.updateAnnouncement(announcement.getId(), announcement.getTitle(), title, desc,
-                    isPinned, draftEventDate, draftEventTime);
-            updateAnnouncementOnMSSQL(announcement.getId(), announcement.getTitle(), title, desc,
-                    isPinned, draftEventDate, draftEventTime);
-            dialog.dismiss();
+            btnPost.setEnabled(false);
+            updateAnnouncementOnMSSQL(announcement.getId(), title, desc, isPinned,
+                    draftEventDate, draftEventTime, dialog, btnPost);
         });
     }
 
-    private void updateAnnouncementOnMSSQL(int id, String oldTitle, String newTitle, String desc,
-                                           boolean isPinned, String eventDate, String eventTime) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
+    private void updateAnnouncementOnMSSQL(int id, String title, String desc, boolean isPinned,
+                                           String eventDate, String eventTime, AlertDialog dialog, Button submitButton) {
+        ioExecutor.execute(() -> {
+            boolean updated = false;
+            try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
                     try (PreparedStatement stmt = con.prepareStatement(
-                            "UPDATE announcements SET title = ?, description = ?, is_pinned = ?, event_date = ?, event_time = ? WHERE id = ? OR title = ?")) {
-                        stmt.setString(1, newTitle);
+                            "UPDATE announcements SET title = ?, description = ?, is_pinned = ?, event_date = ?, event_time = ? WHERE id = ?")) {
+                        stmt.setString(1, title);
                         stmt.setString(2, desc);
                         stmt.setBoolean(3, isPinned);
                         setEventDate(stmt, 4, eventDate);
                         setEventTime(stmt, 5, eventTime);
                         stmt.setInt(6, id);
-                        stmt.setString(7, oldTitle);
-                        stmt.executeUpdate();
+                        updated = stmt.executeUpdate() == 1;
                     }
                 }
             } catch (Exception e) {
-                Log.e("MSSQL_UPDATE_ANN_ERROR", e.getMessage(), e);
+                Log.e("MSSQL_UPDATE_ANN_ERROR", "Announcement update failed.", e);
             }
-            handler.post(() -> {
-                Toast.makeText(AnnouncementOfficialActivity.this, "Announcement updated!", Toast.LENGTH_SHORT).show();
-                loadAnnouncements();
+            final boolean updatedOnServer = updated;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (updatedOnServer) {
+                    dialog.dismiss();
+                    Toast.makeText(this, "Announcement updated!", Toast.LENGTH_SHORT).show();
+                    loadAnnouncements();
+                } else {
+                    submitButton.setEnabled(true);
+                    Toast.makeText(this, "Could not update announcement on SQL Server.", Toast.LENGTH_LONG).show();
+                }
             });
         });
     }
@@ -386,35 +401,42 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 .setTitle("Delete Announcement")
                 .setMessage("Are you sure you want to delete \"" + announcement.getTitle() + "\"?")
                 .setPositiveButton("Delete", (dialog, which) -> {
-                    databaseHelper.deleteAnnouncement(announcement.getId(), announcement.getTitle());
-                    deleteAnnouncementFromMSSQL(announcement.getId(), announcement.getTitle());
+                    deleteAnnouncementFromMSSQL(announcement.getId());
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void deleteAnnouncementFromMSSQL(int id, String title) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
+    private void deleteAnnouncementFromMSSQL(int id) {
+        ioExecutor.execute(() -> {
+            boolean deleted = false;
+            try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
                     try (PreparedStatement stmt = con.prepareStatement(
-                            "DELETE FROM announcements WHERE id = ? OR title = ?")) {
+                            "DELETE FROM announcements WHERE id = ?")) {
                         stmt.setInt(1, id);
-                        stmt.setString(2, title);
-                        stmt.executeUpdate();
+                        deleted = stmt.executeUpdate() == 1;
                     }
                 }
             } catch (Exception e) {
-                Log.e("MSSQL_DELETE_ANN_ERROR", e.getMessage(), e);
+                Log.e("MSSQL_DELETE_ANN_ERROR", "Announcement delete failed.", e);
             }
-            handler.post(() -> {
-                Toast.makeText(AnnouncementOfficialActivity.this, "Announcement deleted!", Toast.LENGTH_SHORT).show();
-                loadAnnouncements();
+            final boolean deletedOnServer = deleted;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (deletedOnServer) {
+                    Toast.makeText(this, "Announcement deleted!", Toast.LENGTH_SHORT).show();
+                    loadAnnouncements();
+                } else {
+                    Toast.makeText(this, "Could not delete announcement on SQL Server.", Toast.LENGTH_LONG).show();
+                }
             });
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ioExecutor.shutdown();
     }
 }

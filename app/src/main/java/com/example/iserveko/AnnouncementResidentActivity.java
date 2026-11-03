@@ -34,8 +34,7 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
         if (getIntent().hasExtra("EMAIL") && getIntent().getStringExtra("EMAIL") != null) {
             return getIntent().getStringExtra("EMAIL");
         }
-        return getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE)
-                .getString("logged_in_email", "resident@iserveko.com");
+        return SessionManager.getEmail(this, "resident@iserveko.com");
     }
 
     @Override

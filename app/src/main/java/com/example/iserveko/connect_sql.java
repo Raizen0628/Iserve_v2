@@ -13,13 +13,6 @@ import java.util.concurrent.Executors;
 
 public class connect_sql {
 
-    // Somee Cloud MSSQL Database Credentials
-    private static final String SERVER = "iserveko.mssql.somee.com";
-    private static final String PORT = "1433";
-    private static final String DB = "iserveko";
-    private static final String USERNAME = "XAVRYN_SQLLogin_1";
-    private static final String PASSWORD = "raijin28";
-
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     public interface QueryCallback {
@@ -36,7 +29,8 @@ public class connect_sql {
             return null;
         }
 
-        String base = "jdbc:jtds:sqlserver://" + SERVER + ":" + PORT + "/" + DB;
+        String base = "jdbc:jtds:sqlserver://" + BuildConfig.MSSQL_SERVER + ":"
+                + BuildConfig.MSSQL_PORT + "/" + BuildConfig.MSSQL_DATABASE;
 
         String[] urlsToTry = {
                 base,
@@ -45,7 +39,8 @@ public class connect_sql {
 
         for (String url : urlsToTry) {
             try {
-                Connection con = DriverManager.getConnection(url, USERNAME, PASSWORD);
+                Connection con = DriverManager.getConnection(
+                        url, BuildConfig.MSSQL_USERNAME, BuildConfig.MSSQL_PASSWORD);
                 if (con != null && !con.isClosed()) {
                     Log.d("MSSQL_SUCCESS", "Connected via: " + url);
                     return con;

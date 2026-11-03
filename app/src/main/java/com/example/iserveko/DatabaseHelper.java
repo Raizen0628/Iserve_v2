@@ -96,7 +96,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         createBorrowTables(db);
         createDocumentRequestsTable(db);
         createMeetingRequestsTable(db);
-        seedDefaultUsers(db);
         seedDefaultAnnouncements(db);
         seedBorrowInventory(db);
     }
@@ -125,26 +124,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception ignored) {
             // Column already exists.
         }
-    }
-
-    private void seedDefaultUsers(SQLiteDatabase db) {
-        ContentValues official = new ContentValues();
-        official.put(COLUMN_FIRST_NAME, "Barangay");
-        official.put(COLUMN_LAST_NAME, "Admin");
-        official.put(COLUMN_EMAIL, "admin@iserveko.com");
-        official.put(COLUMN_PASSWORD, "admin123");
-        official.put(COLUMN_ROLE, "Barangay Official");
-        official.put(COLUMN_POSITION, "Barangay Captain");
-        db.insertWithOnConflict(TABLE_USERS, null, official, SQLiteDatabase.CONFLICT_IGNORE);
-
-        ContentValues resident = new ContentValues();
-        resident.put(COLUMN_FIRST_NAME, "Juan");
-        resident.put(COLUMN_LAST_NAME, "Dela Cruz");
-        resident.put(COLUMN_EMAIL, "resident@iserveko.com");
-        resident.put(COLUMN_PASSWORD, "resident123");
-        resident.put(COLUMN_ROLE, "Resident");
-        resident.put(COLUMN_ADDRESS, "Purok 1");
-        db.insertWithOnConflict(TABLE_USERS, null, resident, SQLiteDatabase.CONFLICT_IGNORE);
     }
 
     private void createAnnouncementsTable(SQLiteDatabase db) {
@@ -278,7 +257,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         createBorrowTables(db);
         createDocumentRequestsTable(db);
         createMeetingRequestsTable(db);
-        seedDefaultUsers(db);
         seedDefaultAnnouncements(db);
         seedBorrowInventory(db);
     }
@@ -324,7 +302,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean checkUser(String email, String password) {
         SQLiteDatabase db = this.getReadableDatabase();
         createUsersTable(db);
-        seedDefaultUsers(db);
         String[] columns = {COLUMN_ID};
         String selection = COLUMN_EMAIL + " = ?" + " AND " + COLUMN_PASSWORD + " = ?";
         String[] selectionArgs = {email, password};
@@ -367,7 +344,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<ResidentUser> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         createUsersTable(db);
-        seedDefaultUsers(db);
         String selection = COLUMN_ROLE + " = ? OR " + COLUMN_ROLE + " IS NULL OR " + COLUMN_ROLE + " != ?";
         String[] selectionArgs = {"Resident", "Barangay Official"};
         try (Cursor cursor = db.query(TABLE_USERS, null, selection, selectionArgs, null, null, COLUMN_LAST_NAME + " ASC")) {
@@ -714,36 +690,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // --- DOCUMENT REQUESTS MANAGEMENT ---
-    public String[] getUserProfile(String email) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        createUsersTable(db);
-        String[] columns = {COLUMN_FIRST_NAME, COLUMN_MIDDLE_NAME, COLUMN_LAST_NAME, COLUMN_ADDRESS, COLUMN_MOBILE};
-        String selection = COLUMN_EMAIL + " = ?";
-        Cursor cursor = db.query(TABLE_USERS, columns, selection, new String[]{email}, null, null, null);
-
-        String fullName = "";
-        String address = "";
-        String mobile = "";
-
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                String fn = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FIRST_NAME));
-                String mn = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MIDDLE_NAME));
-                String ln = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LAST_NAME));
-                address = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ADDRESS));
-                mobile = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MOBILE));
-
-                StringBuilder nameBuilder = new StringBuilder();
-                if (fn != null && !fn.trim().isEmpty()) nameBuilder.append(fn.trim());
-                if (mn != null && !mn.trim().isEmpty()) nameBuilder.append(" ").append(mn.trim());
-                if (ln != null && !ln.trim().isEmpty()) nameBuilder.append(" ").append(ln.trim());
-                fullName = nameBuilder.toString();
-            }
-            cursor.close();
-        }
-        return new String[]{fullName, address != null ? address : "", mobile != null ? mobile : ""};
-    }
-
     public boolean addDocumentRequest(String residentEmail, String fullName, String docType,
                                       String address, String contact, String purpose,
                                       String specificDetails, String requestDate) {

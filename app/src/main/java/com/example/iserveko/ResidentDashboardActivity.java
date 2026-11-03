@@ -1,6 +1,5 @@
 package com.example.iserveko;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -27,8 +26,7 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         if (getIntent().hasExtra("EMAIL") && getIntent().getStringExtra("EMAIL") != null) {
             return getIntent().getStringExtra("EMAIL");
         }
-        return getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-                .getString("logged_in_email", "resident@iserveko.com");
+        return SessionManager.getEmail(this, "resident@iserveko.com");
     }
 
     @Override
@@ -48,6 +46,7 @@ public class ResidentDashboardActivity extends AppCompatActivity {
         txtDashAnnTitle = findViewById(R.id.txtDashAnnTitle);
         txtDashAnnDate = findViewById(R.id.txtDashAnnDate);
         txtDashAnnDesc = findViewById(R.id.txtDashAnnDesc);
+        updateResidentGreeting();
 
         Runnable openAnnouncements = () -> {
             Intent intent = new Intent(this, AnnouncementResidentActivity.class);
@@ -61,6 +60,12 @@ public class ResidentDashboardActivity extends AppCompatActivity {
 
         findViewById(R.id.cardClearance).setOnClickListener(v -> {
             Intent intent = new Intent(this, DocumentRequestActivity.class);
+            intent.putExtra("EMAIL", getCurrentEmail());
+            startActivity(intent);
+        });
+
+        findViewById(R.id.cardComplaints).setOnClickListener(v -> {
+            Intent intent = new Intent(this, ComplaintsReportActivity.class);
             intent.putExtra("EMAIL", getCurrentEmail());
             startActivity(intent);
         });
@@ -126,7 +131,15 @@ public class ResidentDashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        updateResidentGreeting();
         loadLatestAnnouncement();
+    }
+
+    private void updateResidentGreeting() {
+        TextView greeting = findViewById(R.id.txtResidentGreeting);
+        if (greeting == null) return;
+        String name = SessionManager.getDisplayName(this, "").trim();
+        greeting.setText(name.isEmpty() ? "Welcome" : "Welcome, " + name);
     }
 
     private void loadLatestAnnouncement() {

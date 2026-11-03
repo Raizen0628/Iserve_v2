@@ -48,8 +48,7 @@ public class NotificationsActivity extends AppCompatActivity {
         if (getIntent().hasExtra("EMAIL")) {
             residentEmail = getIntent().getStringExtra("EMAIL");
         } else {
-            residentEmail = getSharedPreferences("UserSession", MODE_PRIVATE)
-                    .getString("logged_in_email", "resident@iserveko.com");
+            residentEmail = SessionManager.getEmail(this, "resident@iserveko.com");
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());

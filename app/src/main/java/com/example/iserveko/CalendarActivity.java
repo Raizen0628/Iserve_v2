@@ -211,7 +211,7 @@ public class CalendarActivity extends AppCompatActivity {
                     cloudLoaded = true;
                 }
             } catch (Exception e) {
-                Log.w("CALENDAR_LOAD", "Cloud calendar load failed; showing local cache.", e);
+                Log.w("CALENDAR_LOAD", "Cloud calendar load failed; showing cached announcements only.", e);
             }
 
             if (!cloudLoaded) {
@@ -223,15 +223,6 @@ public class CalendarActivity extends AppCompatActivity {
                                 announcement.getDescription(), normalizeDate(date), announcement.getEventTime(),
                                 CalendarEvent.TYPE_ANNOUNCEMENT, ""));
                     }
-                }
-                for (MeetingRequest meeting : database.getAllMeetingRequests()) {
-                    if (!"Approved".equalsIgnoreCase(meeting.getStatus())) continue;
-                    String purpose = meeting.getPurpose();
-                    String title = purpose == null || purpose.trim().isEmpty()
-                            ? getString(R.string.calendar_type_meeting) : purpose;
-                    loaded.add(new CalendarEvent(meeting.getId(), title, "",
-                            normalizeDate(meeting.getMeetingDate()), meeting.getMeetingTime(),
-                            CalendarEvent.TYPE_MEETING, meeting.getResidentName()));
                 }
             }
 

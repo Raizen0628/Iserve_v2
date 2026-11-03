@@ -122,6 +122,7 @@
     <string name="inventory_item_tables">Tables</string>
     <string name="inventory_item_chairs">Chairs</string>
     <string name="inventory_available_count">%1$d available</string>
+    <string name="inventory_unavailable">Equipment availability unavailable. Connect to SQL Server.</string>
     <string name="inventory_stock_plenty">Plenty in stock</string>
     <string name="inventory_stock_low">Low stock</string>
     <string name="inventory_stock_empty">Out of stock</string>

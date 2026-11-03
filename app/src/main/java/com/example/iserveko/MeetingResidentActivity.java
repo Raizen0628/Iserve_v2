@@ -47,7 +47,7 @@ public class MeetingResidentActivity extends AppCompatActivity {
         setContentView(R.layout.activity_meeting_resident);
         database = new DatabaseHelper(this);
         email = getIntent().getStringExtra("EMAIL");
-        if (email == null) email = getSharedPreferences("UserSession", MODE_PRIVATE).getString("logged_in_email", "");
+        if (email == null) email = SessionManager.getEmail(this, "");
         findViewById(R.id.meetingBack).setOnClickListener(v -> finish());
         purpose = findViewById(R.id.meetingPurposeInput);
         notes = findViewById(R.id.meetingNotesInput);
@@ -93,7 +93,7 @@ public class MeetingResidentActivity extends AppCompatActivity {
     private void submitRequest() {
         String title = text(purpose);
         String note = text(notes);
-        if (email.trim().isEmpty() || title.isEmpty() || selectedDate.isEmpty() || selectedTime.isEmpty()) {
+        if (email == null || email.trim().isEmpty() || title.isEmpty() || selectedDate.isEmpty() || selectedTime.isEmpty()) {
             Toast.makeText(this, R.string.meeting_required_fields, Toast.LENGTH_SHORT).show();
             return;
         }
@@ -113,7 +113,6 @@ public class MeetingResidentActivity extends AppCompatActivity {
         setSubmitting(true);
         executor.execute(() -> {
             boolean saved = false;
-            int serverId = -1;
             String residentName = "";
             try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
@@ -136,32 +135,20 @@ public class MeetingResidentActivity extends AppCompatActivity {
                         insert.setString(6, "Pending");
                         insert.setString(7, requestDate);
                         insert.setString(8, "");
-                        saved = insert.executeUpdate() > 0;
-                    }
-                    if (saved) {
-                        try (PreparedStatement identity = con.prepareStatement("SELECT CAST(SCOPE_IDENTITY() AS INT) AS id");
-                             ResultSet rs = identity.executeQuery()) {
-                            if (rs.next()) serverId = rs.getInt("id");
-                        }
+                        int affectedRows = insert.executeUpdate();
+                        Log.i("MEETING_SUBMIT", "SQL Server insert affected rows=" + affectedRows);
+                        saved = affectedRows > 0;
                     }
                 }
             } catch (Exception e) {
-                Log.w("MEETING_SUBMIT", "Cloud submission failed; saving locally.", e);
+                Log.e("MEETING_SUBMIT", "SQL Server submission failed.", e);
             }
-            boolean cloudSaved = saved;
-            if (saved && serverId > 0) {
-                database.addMeetingRequestWithId(serverId, email, residentName, selectedDate, selectedTime,
-                        storedPurpose, requestDate, "");
-            } else {
-                saved = database.addMeetingRequest(email, residentName.isEmpty() ? email : residentName,
-                        selectedDate, selectedTime, storedPurpose, requestDate);
-            }
-            boolean result = saved;
+            final boolean result = saved;
             main.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 setSubmitting(false);
                 if (result) {
-                    Toast.makeText(this, cloudSaved ? R.string.meeting_submit_success : R.string.meeting_saved_offline, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.meeting_submit_success, Toast.LENGTH_SHORT).show();
                     purpose.setText("");
                     notes.setText("");
                     selectedDate = "";

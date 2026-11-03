@@ -1,6 +1,5 @@
 package com.example.iserveko;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -28,7 +28,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,6 +39,8 @@ import java.util.concurrent.Executors;
 public class DocumentRequestActivity extends AppCompatActivity {
 
     private DatabaseHelper databaseHelper;
+    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private Spinner spinnerDocumentType;
     private TextView txtOfficialRequirements;
@@ -87,8 +88,7 @@ public class DocumentRequestActivity extends AppCompatActivity {
         if (getIntent().hasExtra("EMAIL")) {
             residentEmail = getIntent().getStringExtra("EMAIL");
         } else {
-            residentEmail = getSharedPreferences("UserSession", MODE_PRIVATE)
-                    .getString("logged_in_email", "resident@iserveko.com");
+            residentEmail = SessionManager.getEmail(this, "resident@iserveko.com");
         }
 
         initViews();
@@ -105,6 +105,12 @@ public class DocumentRequestActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewMyDocRequests;
     private DocumentAdapter adapter;
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ioExecutor.shutdown();
+    }
 
     private void initViews() {
         spinnerDocumentType = findViewById(R.id.spinnerDocumentType);
@@ -243,28 +249,17 @@ public class DocumentRequestActivity extends AppCompatActivity {
                         inputFullName.setText(nameBuilder.toString());
                         if (addr != null) inputAddress.setText(addr);
                         if (mob != null) inputContactNumber.setText(mob);
-                        return;
                     }
                 } catch (SQLException e) {
                     Log.e("DOC_PROFILE_ERR", e.getMessage(), e);
                 }
-                loadLocalUserProfile();
             }
 
             @Override
             public void onError(Exception e) {
-                loadLocalUserProfile();
+                Log.w("DOC_PROFILE_ERR", "SQL Server profile unavailable; resident details must be entered manually.", e);
             }
         });
-    }
-
-    private void loadLocalUserProfile() {
-        String[] prof = databaseHelper.getUserProfile(residentEmail);
-        if (prof != null) {
-            if (!prof[0].isEmpty()) inputFullName.setText(prof[0]);
-            if (!prof[1].isEmpty()) inputAddress.setText(prof[1]);
-            if (!prof[2].isEmpty()) inputContactNumber.setText(prof[2]);
-        }
     }
 
     private void submitRequest() {
@@ -341,39 +336,17 @@ public class DocumentRequestActivity extends AppCompatActivity {
         String specificDetails = specificBuilder.toString();
         String reqDate = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(new Date());
 
-        // Local SQLite save
-        databaseHelper.addDocumentRequest(email, fullName, docType, address, contact, purpose, specificDetails, reqDate);
-
-        // MSSQL save
         submitDocumentRequestToMSSQL(email, fullName, docType, address, contact, purpose, specificDetails, reqDate);
     }
 
-    private void submitDocumentRequestToMSSQL(String email, String name, String docType, String address, String contact, String purpose, String specificDetails, String reqDate) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
+    private void submitDocumentRequestToMSSQL(String email, String name, String docType, String address,
+                                               String contact, String purpose, String specificDetails, String reqDate) {
+        Button submitButton = findViewById(R.id.btnSubmitDocumentRequest);
+        submitButton.setEnabled(false);
+        ioExecutor.execute(() -> {
+            boolean saved = false;
+            try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
-                    Statement stmt = con.createStatement();
-
-                    // Ensure table exists
-                    String checkTable = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_requests') "
-                            + "CREATE TABLE document_requests ("
-                            + "id INT IDENTITY(1,1) PRIMARY KEY, "
-                            + "resident_email VARCHAR(100) NOT NULL, "
-                            + "full_name VARCHAR(100) NOT NULL, "
-                            + "document_type VARCHAR(100) NOT NULL, "
-                            + "address VARCHAR(255) NOT NULL, "
-                            + "contact_number VARCHAR(50) NOT NULL, "
-                            + "purpose VARCHAR(255) NOT NULL, "
-                            + "specific_details VARCHAR(500) NULL, "
-                            + "status VARCHAR(20) NOT NULL DEFAULT 'Pending', "
-                            + "request_date VARCHAR(50) NOT NULL, "
-                            + "remarks VARCHAR(255) NULL);";
-                    stmt.executeUpdate(checkTable);
-
                     try (PreparedStatement ps = con.prepareStatement(
                             "INSERT INTO document_requests (resident_email, full_name, document_type, address, contact_number, purpose, specific_details, status, request_date, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?, '')")) {
                         ps.setString(1, email);
@@ -384,15 +357,24 @@ public class DocumentRequestActivity extends AppCompatActivity {
                         ps.setString(6, purpose);
                         ps.setString(7, specificDetails);
                         ps.setString(8, reqDate);
-                        ps.executeUpdate();
+                        saved = ps.executeUpdate() == 1;
                     }
                 }
             } catch (Exception e) {
-                Log.e("DOC_REQ_MSSQL_ERR", e.getMessage(), e);
+                Log.e("DOC_REQ_MSSQL_ERR", "Document request insert failed.", e);
             }
-            handler.post(() -> {
-                Toast.makeText(DocumentRequestActivity.this, "Document request submitted successfully!", Toast.LENGTH_LONG).show();
-                loadMyDocumentRequests();
+
+            final boolean savedOnServer = saved;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                submitButton.setEnabled(true);
+                if (savedOnServer) {
+                    Toast.makeText(this, "Document request submitted successfully.", Toast.LENGTH_LONG).show();
+                    loadMyDocumentRequests();
+                } else {
+                    Toast.makeText(this, "Could not submit the request to SQL Server. Your form is still available to retry.",
+                            Toast.LENGTH_LONG).show();
+                }
             });
         });
     }

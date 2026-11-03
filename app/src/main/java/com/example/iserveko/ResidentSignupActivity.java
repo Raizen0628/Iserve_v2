@@ -1,6 +1,5 @@
 package com.example.iserveko;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,14 +19,12 @@ import java.util.concurrent.Executors;
 
 public class ResidentSignupActivity extends AppCompatActivity {
 
-    private DatabaseHelper databaseHelper;
+    private final ExecutorService signupExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_resident_signup);
-
-        databaseHelper = new DatabaseHelper(this);
 
         TextView backButton    = findViewById(R.id.btnBack);
         EditText firstName     = findViewById(R.id.first_name_input);
@@ -58,44 +55,30 @@ public class ResidentSignupActivity extends AppCompatActivity {
             } else if (!pass.equals(confirm)) {
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             } else {
-                // 1. Save locally in SQLite Database
-                databaseHelper.addResident(first, middle, last, email, address, "", pass);
-
-                // 2. Save Session
-                getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-                        .edit()
-                        .putString("logged_in_email", email)
-                        .putBoolean("is_official", false)
-                        .apply();
-
-                // 3. Insert into MSSQL Database and navigate to Resident Dashboard
-                registerUserOnMSSQL(first, last, email, pass);
+                registerUserOnMSSQL(first, middle, last, email, address, pass);
             }
         });
     }
 
-    private void registerUserOnMSSQL(String first, String last, String email, String password) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+    private void registerUserOnMSSQL(String first, String middle, String last, String email,
+                                     String address, String password) {
         Handler handler = new Handler(Looper.getMainLooper());
 
-        executor.execute(() -> {
-            try {
-                Connection con = connect_sql.getConnection();
-                if (con != null) {
-                    try (PreparedStatement stmt = con.prepareStatement(
-                            "INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)")) {
-                        stmt.setString(1, first);
-                        stmt.setString(2, last);
-                        stmt.setString(3, email);
-                        stmt.setString(4, password);
-                        stmt.setString(5, "Resident");
-                        stmt.executeUpdate();
-                    }
-                }
-            } catch (Exception e) {
-                Log.e("MSSQL_REGISTER_ERROR", e.getMessage(), e);
-            }
+        signupExecutor.execute(() -> {
+            boolean registered = insertResidentOnMSSQL(first, middle, last, email, address, password);
             handler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (!registered) {
+                    Toast.makeText(ResidentSignupActivity.this,
+                            "Registration failed. Check your connection or whether this email is already registered.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                SessionManager.saveSession(this, email, false);
+                String displayName = first + (middle.isEmpty() ? "" : " " + middle) + " " + last;
+                SessionManager.saveDisplayName(this, displayName.trim());
+
                 Toast.makeText(ResidentSignupActivity.this, "Registration Successful!", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(ResidentSignupActivity.this, ResidentDashboardActivity.class);
                 intent.putExtra("EMAIL", email);
@@ -104,5 +87,33 @@ public class ResidentSignupActivity extends AppCompatActivity {
                 finish();
             });
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        signupExecutor.shutdown();
+    }
+
+    private boolean insertResidentOnMSSQL(String first, String middle, String last, String email,
+                                          String address, String password) {
+        try (Connection con = connect_sql.getConnection()) {
+            if (con == null) return false;
+            try (PreparedStatement stmt = con.prepareStatement(
+                    "INSERT INTO users (first_name, middle_name, last_name, email, address, password, role) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                stmt.setString(1, first);
+                stmt.setString(2, middle);
+                stmt.setString(3, last);
+                stmt.setString(4, email);
+                stmt.setString(5, address);
+                stmt.setString(6, password);
+                stmt.setString(7, "Resident");
+                return stmt.executeUpdate() == 1;
+            }
+        } catch (Exception e) {
+            Log.e("MSSQL_REGISTER_ERROR", "Resident registration failed.", e);
+            return false;
+        }
     }
 }

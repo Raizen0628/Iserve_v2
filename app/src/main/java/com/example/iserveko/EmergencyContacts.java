@@ -1,97 +1,28 @@
 package com.example.iserveko;
 
-import androidx.annotation.StringRes;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/** Central directory for emergency contacts, numbers, and missing-mobile placeholders. */
+/** Edit the emergency directory here. */
 public final class EmergencyContacts {
-    private static final List<EmergencyContact> CONTACTS =
-            Collections.unmodifiableList(Arrays.asList(
-                    new EmergencyContact(
-                            R.string.emergency_hotline_title,
-                            R.string.emergency_hotline_desc,
-                            R.string.emoji_emergency,
-                            "911",
-                            "911",
-                            true),
-                    new EmergencyContact(
-                            R.string.police_contact_title,
-                            R.string.police_contact_desc,
-                            R.string.emoji_tanod,
-                            "0936-185-5910",
-                            "09361855910",
-                            false),
-                    new EmergencyContact(
-                            R.string.fire_contact_title,
-                            R.string.fire_contact_desc,
-                            R.string.emoji_fire,
-                            "0927-575-8095",
-                            "09275758095",
-                            false),
-                    new EmergencyContact(
-                            R.string.fire_alternate_title,
-                            R.string.fire_alternate_desc,
-                            R.string.emoji_fire,
-                            "0949-854-7526",
-                            "09498547526",
-                            false),
-                    new EmergencyContact(
-                            R.string.hospital_emergency_title,
-                            R.string.hospital_emergency_desc,
-                            R.string.emoji_ambulance,
-                            "0917-1499387",
-                            "09171499387",
-                            false),
-                    new EmergencyContact(
-                            R.string.barangay_hall_title,
-                            R.string.barangay_hall_desc,
-                            R.string.emoji_hall,
-                            "0977-625-5928",
-                            "09776255928",
-                            false),
-                    new EmergencyContact(
-                            R.string.drrm_title,
-                            R.string.drrm_desc,
-                            R.string.emoji_drrm,
-                            "0915-463-5005",
-                            "09154635005",
-                            false),
-                    missingMobile(
-                            R.string.mayor_contact_title,
-                            R.string.mayor_contact_desc,
-                            R.string.emoji_other_contacts),
-                    missingMobile(
-                            R.string.batelec_contact_title,
-                            R.string.batelec_contact_desc,
-                            R.string.emoji_other_contacts),
-                    missingMobile(
-                            R.string.poison_control_title,
-                            R.string.poison_control_desc,
-                            R.string.emoji_ambulance),
-                    missingMobile(
-                            R.string.red_cross_contact_title,
-                            R.string.red_cross_contact_desc,
-                            R.string.emoji_other_contacts),
-                    missingMobile(
-                            R.string.water_district_contact_title,
-                            R.string.water_district_contact_desc,
-                            R.string.emoji_other_contacts)
-            ));
+    private static final List<EmergencyContact> CONTACTS = Collections.unmodifiableList(Arrays.asList(
+            new EmergencyContact("Lipa CDRRMO (Lipa Rescue)", "",
+                    "0915-463-5005", "(043) 756-0127", "(043) 757-5164"),
+            new EmergencyContact("Lipa Bureau of Fire Protection", "BFP",
+                    "0927-575-8065", "(043) 757-4618"),
+            new EmergencyContact("Lipa Philippine National Police", "PNP",
+                    "0977-744-9692", "(043) 702-3832"),
+            new EmergencyContact("Lipa Traffic Management Division", "TMD",
+                    "(043) 702-6454", "(043) 404-9152"),
+            new EmergencyContact("Batangas II Electric Cooperative Inc.", "",
+                    "0917-504-9254", "0998-892-0145", "(043) 756-6337"),
+            new EmergencyContact("Metro Lipa Water District", "MLWD",
+                    "(043) 756-1611", "(043) 756-1118"),
+            new EmergencyContact("Red Cross Lipa", "",
+                    "0998-957-0443", "(043) 740-0768")
+    ));
 
     private EmergencyContacts() { }
-
-    private static EmergencyContact missingMobile(
-            @StringRes int nameRes,
-            @StringRes int descriptionRes,
-            @StringRes int iconRes) {
-        return new EmergencyContact(
-                nameRes, descriptionRes, iconRes, null, null, false);
-    }
-
-    public static List<EmergencyContact> getAll() {
-        return CONTACTS;
-    }
+    public static List<EmergencyContact> getAll() { return CONTACTS; }
 }

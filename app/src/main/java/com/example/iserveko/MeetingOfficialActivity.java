@@ -29,7 +29,6 @@ import java.util.concurrent.Executors;
 public class MeetingOfficialActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
-    private DatabaseHelper database;
     private MeetingAdapter adapter;
     private SwipeRefreshLayout refresh;
     private View empty;
@@ -38,7 +37,6 @@ public class MeetingOfficialActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.activity_meeting_official);
-        database = new DatabaseHelper(this);
         findViewById(R.id.meetingBack).setOnClickListener(v -> finish());
         RecyclerView list = findViewById(R.id.meetingRequestsList);
         list.setLayoutManager(new LinearLayoutManager(this));
@@ -85,7 +83,7 @@ public class MeetingOfficialActivity extends AppCompatActivity {
             boolean updated = false;
             try (Connection con = connect_sql.getConnection();
                  PreparedStatement statement = con == null ? null : con.prepareStatement(
-                         "UPDATE meeting_requests SET status = ?, remarks = ? WHERE id = ?")) {
+                         "UPDATE meeting_requests SET status = ?, remarks = ? WHERE id = ? AND status = 'Pending'")) {
                 if (statement != null) {
                     statement.setString(1, status);
                     statement.setString(2, remarks);
@@ -95,13 +93,10 @@ public class MeetingOfficialActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Log.w("MEETING_UPDATE", "Cloud status update failed.", e);
             }
-            boolean localUpdated = database.updateMeetingRequestStatus(request.getId(), status, remarks);
             boolean success = updated;
-            boolean cached = localUpdated;
             main.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
-                int message = success ? R.string.meeting_status_updated
-                        : cached ? R.string.meeting_status_saved_offline : R.string.meeting_status_update_error;
+                int message = success ? R.string.meeting_status_updated : R.string.meeting_status_update_error;
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
                 loadRequests();
             });
@@ -126,16 +121,21 @@ public class MeetingOfficialActivity extends AppCompatActivity {
                     cloud = true;
                 }
             } catch (Exception e) {
-                Log.w("MEETING_LOAD", "Cloud load failed; using local cache.", e);
+                Log.w("MEETING_LOAD", "Cloud load failed; requests are unavailable.", e);
             }
-            if (!cloud) requests = database.getAllMeetingRequests();
             List<MeetingRequest> result = requests;
+            boolean loadedFromServer = cloud;
             main.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 refresh.setRefreshing(false);
                 adapter.submitList(result);
                 adapter.filterByStatus(filter);
                 empty.setVisibility(adapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
+                if (!loadedFromServer) {
+                    Toast.makeText(this,
+                            "Unable to load meeting requests. Connect to SQL Server and try again.",
+                            Toast.LENGTH_SHORT).show();
+                }
             });
         });
     }

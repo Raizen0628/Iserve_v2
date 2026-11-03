@@ -55,6 +55,10 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".ComplaintsReportActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".Service"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

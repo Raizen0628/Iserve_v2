@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
 
 public class ResidentDirectoryActivity extends AppCompatActivity {
 
-    private DatabaseHelper databaseHelper;
     private RecyclerView recyclerView;
     private ResidentAdapter adapter;
     private TextView txtResidentCount, txtEmptyDirectory;
@@ -51,13 +50,10 @@ public class ResidentDirectoryActivity extends AppCompatActivity {
             return insets;
         });
 
-        databaseHelper = new DatabaseHelper(this);
-
         if (getIntent().hasExtra("EMAIL")) {
             officialEmail = getIntent().getStringExtra("EMAIL");
         } else {
-            officialEmail = getSharedPreferences("UserSession", MODE_PRIVATE)
-                    .getString("logged_in_email", "");
+            officialEmail = SessionManager.getEmail(this, "");
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -165,15 +161,11 @@ public class ResidentDirectoryActivity extends AppCompatActivity {
             final List<ResidentUser> finalMssqlList = list;
 
             handler.post(() -> {
-                if (isMssqlSuccess && !finalMssqlList.isEmpty()) {
-                    bindResidentsList(finalMssqlList);
-                } else {
-                    // Fallback to local SQLite DB
-                    List<ResidentUser> localList = databaseHelper.getAllResidents();
-                    bindResidentsList(localList);
-                    if (!isMssqlSuccess && localList.isEmpty()) {
-                        Toast.makeText(ResidentDirectoryActivity.this, "Unable to connect to MSSQL. Displaying local records.", Toast.LENGTH_SHORT).show();
-                    }
+                bindResidentsList(finalMssqlList);
+                if (!isMssqlSuccess) {
+                    Toast.makeText(ResidentDirectoryActivity.this,
+                            "Unable to load residents. Connect to SQL Server and try again.",
+                            Toast.LENGTH_SHORT).show();
                 }
             });
         });

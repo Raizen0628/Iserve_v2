@@ -38,7 +38,6 @@ public class DocumentOfficialActivity extends AppCompatActivity {
     private static final String STATUS_READY = "Ready for Pickup";
     private static final String STATUS_DECLINED = "Declined";
 
-    private DatabaseHelper databaseHelper;
     private RecyclerView recyclerView;
     private DocumentAdapter adapter;
     private ChipGroup chipGroupDocStatus;
@@ -60,8 +59,6 @@ public class DocumentOfficialActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        databaseHelper = new DatabaseHelper(this);
 
         chipGroupDocStatus = findViewById(R.id.chipGroupDocStatus);
         recyclerView = findViewById(R.id.recyclerViewDocumentRequests);
@@ -161,21 +158,23 @@ public class DocumentOfficialActivity extends AppCompatActivity {
                                 rs.getString("request_date"),
                                 rs.getString("remarks")));
                     }
-                    if (!list.isEmpty()) {
-                        bindAdapter(list);
-                        return;
-                    }
+                    bindAdapter(list);
+                    return;
                 } catch (SQLException e) {
-                    Log.e("DOC_REQ_LOAD_ERR", String.valueOf(e.getMessage()), e);
+                    Log.e("DOC_REQ_LOAD_ERR", "Could not parse server document requests.", e);
                 }
-                bindAdapter(databaseHelper.getAllDocumentRequests());
+                bindAdapter(new ArrayList<>());
+                Toast.makeText(DocumentOfficialActivity.this,
+                        "Could not load document requests from SQL Server.", Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onError(Exception e) {
                 if (isFinishing() || isDestroyed()) return;
-                Log.e("DOC_REQ_LOAD_ERR", String.valueOf(e.getMessage()), e);
-                bindAdapter(databaseHelper.getAllDocumentRequests());
+                Log.e("DOC_REQ_LOAD_ERR", "Could not load server document requests.", e);
+                bindAdapter(new ArrayList<>());
+                Toast.makeText(DocumentOfficialActivity.this,
+                        "Connect to SQL Server to review document requests.", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -249,29 +248,29 @@ public class DocumentOfficialActivity extends AppCompatActivity {
                 .show();
     }
 
-    // Updates the local SQLite copy, then the MSSQL server
     private void applyStatus(DocumentRequest request, String status, String remarks) {
-        databaseHelper.updateDocumentRequestStatus(request.getId(), status, remarks);
         updateStatusOnMSSQL(request.getId(), status, remarks);
     }
 
     private void updateStatusOnMSSQL(int id, String status, String remarks) {
         executor.execute(() -> {
             boolean success = false;
-            try {
-                Connection con = connect_sql.getConnection();
+            try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
-                    // PreparedStatement: safe from SQL injection and handles quotes automatically
                     try (PreparedStatement ps = con.prepareStatement(
-                            "UPDATE document_requests SET status = ?, remarks = ? WHERE id = ?")) {
+                            "UPDATE document_requests SET status = ?, remarks = ? WHERE id = ? "
+                                    + "AND ((status = 'Pending' AND ? IN ('Approved', 'Declined', 'Ready for Pickup')) "
+                                    + "OR (status = 'Approved' AND ? IN ('Declined', 'Ready for Pickup')))")) {
                         ps.setString(1, status);
                         ps.setString(2, remarks);
                         ps.setInt(3, id);
-                        success = ps.executeUpdate() > 0;
+                        ps.setString(4, status);
+                        ps.setString(5, status);
+                        success = ps.executeUpdate() == 1;
                     }
                 }
             } catch (Exception e) {
-                Log.e("DOC_STATUS_MSSQL_ERR", String.valueOf(e.getMessage()), e);
+                Log.e("DOC_STATUS_MSSQL_ERR", "Document request status update failed.", e);
             }
 
             final boolean updated = success;
@@ -279,7 +278,7 @@ public class DocumentOfficialActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) return;
                 String message = updated
                         ? "Status updated to " + status + "!"
-                        : "Saved on this device, but the server update failed.";
+                        : "Could not update the request. It may have changed or SQL Server may be unavailable.";
                 Toast.makeText(DocumentOfficialActivity.this, message, Toast.LENGTH_SHORT).show();
                 loadDocumentRequests();
             });
