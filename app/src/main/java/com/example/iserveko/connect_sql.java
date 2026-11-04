@@ -36,6 +36,7 @@ public class connect_sql {
                 + ";loginTimeout=" + TIMEOUT_SECONDS + ";socketTimeout=" + TIMEOUT_SECONDS;
 
         String[] urlsToTry = {
+                base + ";ssl=off",
                 base,
                 base + ";ssl=request"
         };
@@ -84,9 +85,10 @@ public class connect_sql {
                 }
                 resultSet = statement.executeQuery();
 
-                Connection finalConnection = con;
-                PreparedStatement finalStatement = statement;
-                ResultSet finalResultSet = resultSet;
+                final Connection finalConnection = con;
+                final PreparedStatement finalStatement = statement;
+                final ResultSet finalResultSet = resultSet;
+
                 handler.post(() -> {
                     try {
                         callback.onSuccess(finalResultSet);
@@ -96,16 +98,12 @@ public class connect_sql {
                         try { finalConnection.close(); } catch (Exception ignored) { }
                     }
                 });
-                con = null;
-                statement = null;
-                resultSet = null;
             } catch (Exception e) {
                 Log.e(TAG, "Query execution failed: " + e.getMessage(), e);
-                handler.post(() -> callback.onError(e));
-            } finally {
                 try { if (resultSet != null) resultSet.close(); } catch (Exception ignored) { }
                 try { if (statement != null) statement.close(); } catch (Exception ignored) { }
                 try { if (con != null) con.close(); } catch (Exception ignored) { }
+                handler.post(() -> callback.onError(e));
             }
         });
     }

@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -65,19 +66,59 @@ public class ResidentSignupActivity extends AppCompatActivity {
         Handler handler = new Handler(Looper.getMainLooper());
 
         signupExecutor.execute(() -> {
-            boolean registered = insertResidentOnMSSQL(first, middle, last, email, address, password);
+            boolean isSuccess = false;
+            String message = "Registration failed.";
+
+            try (Connection con = connect_sql.getConnection()) {
+                if (con == null) {
+                    message = "Can't reach SQL Server. Check your connection.";
+                } else {
+                    // Check duplicate email
+                    boolean exists = false;
+                    try (PreparedStatement checkStmt = con.prepareStatement(
+                            "SELECT COUNT(*) FROM users WHERE email = ?")) {
+                        checkStmt.setString(1, email);
+                        try (ResultSet rs = checkStmt.executeQuery()) {
+                            if (rs.next() && rs.getInt(1) > 0) {
+                                exists = true;
+                            }
+                        }
+                    }
+
+                    if (exists) {
+                        message = "An account with this email already exists.";
+                    } else {
+                        try (PreparedStatement stmt = con.prepareStatement(
+                                "INSERT INTO users (first_name, middle_name, last_name, email, address, password, role) "
+                                        + "VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                            stmt.setString(1, first);
+                            stmt.setString(2, middle);
+                            stmt.setString(3, last);
+                            stmt.setString(4, email);
+                            stmt.setString(5, address);
+                            stmt.setString(6, password);
+                            stmt.setString(7, "Resident");
+                            isSuccess = stmt.executeUpdate() == 1;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("MSSQL_REGISTER_ERROR", "Resident registration failed.", e);
+                message = "Registration failed: " + e.getMessage();
+            }
+
+            final boolean registered = isSuccess;
+            final String finalMessage = message;
+
             handler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 if (!registered) {
-                    Toast.makeText(ResidentSignupActivity.this,
-                            "Registration failed. Check your connection or whether this email is already registered.",
-                            Toast.LENGTH_LONG).show();
+                    Toast.makeText(ResidentSignupActivity.this, finalMessage, Toast.LENGTH_LONG).show();
                     return;
                 }
 
-                SessionManager.saveSession(this, email, false);
-                String displayName = first + (middle.isEmpty() ? "" : " " + middle) + " " + last;
-                SessionManager.saveDisplayName(this, displayName.trim());
+                String fullName = (first + " " + (middle.isEmpty() ? "" : middle + " ") + last).trim();
+                SessionManager.saveUserSession(this, "", fullName, email, address, "", false);
 
                 Toast.makeText(ResidentSignupActivity.this, "Registration Successful!", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(ResidentSignupActivity.this, ResidentDashboardActivity.class);
@@ -93,25 +134,5 @@ public class ResidentSignupActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         signupExecutor.shutdown();
-    }
-
-    private boolean insertResidentOnMSSQL(String first, String middle, String last, String email,
-                                          String address, String password) {
-        try (Connection con = connect_sql.getConnection()) {
-            if (con == null) return false;
-            try (PreparedStatement stmt = con.prepareStatement(
-                    "INSERT INTO users (first_name, last_name, email, password, role) "
-                            + "VALUES (?, ?, ?, ?, ?)")) {
-                stmt.setString(1, first);
-                stmt.setString(2, last);
-                stmt.setString(3, email);
-                stmt.setString(4, password);
-                stmt.setString(5, "Resident");
-                return stmt.executeUpdate() == 1;
-            }
-        } catch (Exception e) {
-            Log.e("MSSQL_REGISTER_ERROR", "Resident registration failed.", e);
-            return false;
-        }
     }
 }
