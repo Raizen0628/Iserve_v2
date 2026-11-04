@@ -128,30 +128,29 @@ public class ResidentDirectoryActivity extends AppCompatActivity {
             List<ResidentUser> list = new ArrayList<>();
             boolean success = false;
 
-            try {
-                Connection con = connect_sql.getConnection();
+            try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
                     String query = "SELECT * FROM users WHERE role = 'Resident' OR role IS NULL OR role NOT LIKE '%Official%' ORDER BY last_name ASC, first_name ASC";
-                    Statement stmt = con.createStatement();
-                    ResultSet rs = stmt.executeQuery(query);
+                    try (Statement stmt = con.createStatement();
+                         ResultSet rs = stmt.executeQuery(query)) {
+                        while (rs.next()) {
+                            int id = rs.getInt("id");
+                            String firstName = rs.getString("first_name");
+                            String middleName = "";
+                            try { middleName = rs.getString("middle_name"); } catch (Exception ignored) {}
+                            String lastName = rs.getString("last_name");
+                            String email = rs.getString("email");
+                            String address = "";
+                            try { address = rs.getString("address"); } catch (Exception ignored) {}
+                            String mobile = "";
+                            try { mobile = rs.getString("mobile"); } catch (Exception ignored) {}
+                            String role = "";
+                            try { role = rs.getString("role"); } catch (Exception ignored) {}
 
-                    while (rs.next()) {
-                        int id = rs.getInt("id");
-                        String firstName = rs.getString("first_name");
-                        String middleName = "";
-                        try { middleName = rs.getString("middle_name"); } catch (Exception ignored) {}
-                        String lastName = rs.getString("last_name");
-                        String email = rs.getString("email");
-                        String address = "";
-                        try { address = rs.getString("address"); } catch (Exception ignored) {}
-                        String mobile = "";
-                        try { mobile = rs.getString("mobile"); } catch (Exception ignored) {}
-                        String role = "";
-                        try { role = rs.getString("role"); } catch (Exception ignored) {}
-
-                        list.add(new ResidentUser(id, firstName, middleName, lastName, email, address, mobile, role));
+                            list.add(new ResidentUser(id, firstName, middleName, lastName, email, address, mobile, role));
+                        }
+                        success = true;
                     }
-                    success = true;
                 }
             } catch (Exception e) {
                 Log.e("MSSQL_RESIDENTS_ERROR", "Error fetching residents: " + e.getMessage(), e);

@@ -117,13 +117,15 @@ public class MeetingResidentActivity extends AppCompatActivity {
             try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
                     try (PreparedStatement profile = con.prepareStatement(
-                            "SELECT first_name, middle_name, last_name FROM users WHERE email = ?")) {
+                            "SELECT first_name, last_name FROM users WHERE email = ?")) {
                         profile.setString(1, email);
                         try (ResultSet rs = profile.executeQuery()) {
                             if (rs.next()) {
-                                residentName = joinName(rs.getString("first_name"), rs.getString("middle_name"), rs.getString("last_name"));
+                                residentName = joinName(rs.getString("first_name"), "", rs.getString("last_name"));
                             }
                         }
+                    } catch (Exception nameEx) {
+                        Log.w("MEETING_SUBMIT", "Could not fetch user profile name: " + nameEx.getMessage());
                     }
                     try (PreparedStatement insert = con.prepareStatement(
                             "INSERT INTO meeting_requests (resident_email, resident_name, meeting_date, meeting_time, purpose, status, request_date, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {

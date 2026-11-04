@@ -100,15 +100,13 @@ public class ResidentSignupActivity extends AppCompatActivity {
         try (Connection con = connect_sql.getConnection()) {
             if (con == null) return false;
             try (PreparedStatement stmt = con.prepareStatement(
-                    "INSERT INTO users (first_name, middle_name, last_name, email, address, password, role) "
-                            + "VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO users (first_name, last_name, email, password, role) "
+                            + "VALUES (?, ?, ?, ?, ?)")) {
                 stmt.setString(1, first);
-                stmt.setString(2, middle);
-                stmt.setString(3, last);
-                stmt.setString(4, email);
-                stmt.setString(5, address);
-                stmt.setString(6, password);
-                stmt.setString(7, "Resident");
+                stmt.setString(2, last);
+                stmt.setString(3, email);
+                stmt.setString(4, password);
+                stmt.setString(5, "Resident");
                 return stmt.executeUpdate() == 1;
             }
         } catch (Exception e) {

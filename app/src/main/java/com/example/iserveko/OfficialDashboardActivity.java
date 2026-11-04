@@ -48,6 +48,14 @@ public class OfficialDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        findViewById(R.id.cardComplaintsReports).setOnClickListener(v -> {
+            Intent intent = new Intent(this, ComplaintsOfficialActivity.class);
+            if (getIntent().hasExtra("EMAIL")) {
+                intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+            }
+            startActivity(intent);
+        });
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
         bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
@@ -80,7 +88,7 @@ public class OfficialDashboardActivity extends AppCompatActivity {
     }
 
     private void showPendingRequestsTypeDialog() {
-        String[] options = {"📄 Document Requests (Clearances & Certificates)", "🪑 Equipment Borrowing (Tables & Chairs)", "📅 Meeting Requests"};
+        String[] options = {"📄 Document Requests (Clearances & Certificates)", "🪑 Equipment Borrowing (Tables & Chairs)", "📅 Meeting Requests", "💬 Complaints & Reports"};
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Manage Pending Requests")
                 .setItems(options, (dialog, which) -> {
@@ -90,6 +98,12 @@ public class OfficialDashboardActivity extends AppCompatActivity {
                         startActivity(new Intent(this, BorrowOfficialActivity.class));
                     } else if (which == 2) {
                         Intent intent = new Intent(this, MeetingOfficialActivity.class);
+                        if (getIntent().hasExtra("EMAIL")) {
+                            intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
+                        }
+                        startActivity(intent);
+                    } else if (which == 3) {
+                        Intent intent = new Intent(this, ComplaintsOfficialActivity.class);
                         if (getIntent().hasExtra("EMAIL")) {
                             intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
                         }

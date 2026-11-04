@@ -216,4 +216,30 @@
     <string name="profile_bio_resident_default">Resident of Lipa City</string>
     <string name="profile_bio_hint">Write something about yourself…</string>
     <string name="profile_save_bio">Save Bio</string>
+
+    <!-- Complaints & Reports Strings -->
+    <string name="complaints_official_title">Complaints &amp; Reports</string>
+    <string name="complaints_official_desc">Review and manage resident reports and feedback</string>
+    <string name="complaints_category_label">Category *</string>
+    <string name="complaints_subject_hint">Subject (Max 200 chars) *</string>
+    <string name="complaints_description_hint">Description *</string>
+    <string name="complaints_location_hint">Location / Landmark (Optional)</string>
+    <string name="complaints_submit">Submit</string>
+    <string name="complaints_submitting">Submitting…</string>
+    <string name="complaints_my_submissions">My Submissions</string>
+    <string name="complaints_empty">No complaints, reports, or feedback yet.</string>
+    <string name="complaints_submit_success">Submitted successfully.</string>
+    <string name="complaints_submit_error">Failed to submit. Please check your connection and try again.</string>
+    <string name="complaints_filter_in_review">In Review</string>
+    <string name="complaints_filter_resolved">Resolved</string>
+    <string name="complaints_filter_dismissed">Dismissed</string>
+    <string name="complaints_status_updated">Status updated successfully.</string>
+    <string name="complaints_status_update_error">Failed to update status. Please try again.</string>
+    <string name="complaints_validation_subject">Please enter a subject (up to 200 characters).</string>
+    <string name="complaints_validation_desc">Please enter a description.</string>
+    <string name="complaints_review_action">Review / Update</string>
+    <string name="complaints_remarks_label">Official Remarks</string>
+    <string name="complaints_update_title">Update Complaint / Report</string>
+    <string name="complaints_desc_label">Description:</string>
+    <string name="complaints_update_status_label">Update Status:</string>
 </resources>

@@ -13,6 +13,8 @@ import java.util.concurrent.Executors;
 
 public class connect_sql {
 
+    private static final String TAG = "MSSQL_CONN";
+    private static final int TIMEOUT_SECONDS = 15;
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     public interface QueryCallback {
@@ -23,14 +25,15 @@ public class connect_sql {
     public static Connection getConnection() {
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            DriverManager.setLoginTimeout(3);
+            DriverManager.setLoginTimeout(TIMEOUT_SECONDS);
         } catch (Exception e) {
-            Log.e("MSSQL_DRIVER_ERROR", "jTDS Driver missing or error: " + e.getMessage());
+            Log.e(TAG, "jTDS Driver missing or initialization error: " + e.getMessage(), e);
             return null;
         }
 
         String base = "jdbc:jtds:sqlserver://" + BuildConfig.MSSQL_SERVER + ":"
-                + BuildConfig.MSSQL_PORT + "/" + BuildConfig.MSSQL_DATABASE;
+                + BuildConfig.MSSQL_PORT + "/" + BuildConfig.MSSQL_DATABASE
+                + ";loginTimeout=" + TIMEOUT_SECONDS + ";socketTimeout=" + TIMEOUT_SECONDS;
 
         String[] urlsToTry = {
                 base,
@@ -42,15 +45,15 @@ public class connect_sql {
                 Connection con = DriverManager.getConnection(
                         url, BuildConfig.MSSQL_USERNAME, BuildConfig.MSSQL_PASSWORD);
                 if (con != null && !con.isClosed()) {
-                    Log.d("MSSQL_SUCCESS", "Connected via: " + url);
+                    Log.d(TAG, "Connected successfully via: " + url);
                     return con;
                 }
             } catch (Exception e) {
-                Log.w("MSSQL_TRY_FAILED", "Failed via [" + url + "]: " + e.getMessage());
+                Log.w(TAG, "Connection attempt failed via [" + url + "]: " + e.getMessage(), e);
             }
         }
 
-        Log.e("MSSQL_ERROR", "All Somee MSSQL connection attempts failed!");
+        Log.e(TAG, "All MSSQL connection attempts to " + BuildConfig.MSSQL_SERVER + " failed! Check network, credentials, and server status.");
         return null;
     }
 
@@ -68,8 +71,10 @@ public class connect_sql {
             try {
                 con = getConnection();
                 if (con == null) {
-                    handler.post(() -> callback.onError(new Exception(
-                            "Could not connect to Somee MSSQL Server. Check internet connection and Logcat (MSSQL_TRY_FAILED).")));
+                    Exception connEx = new Exception(
+                            "Could not connect to MSSQL Server (" + BuildConfig.MSSQL_SERVER + "). Check internet connection and Logcat (tag: " + TAG + ").");
+                    Log.e(TAG, "getConnection() returned null for query: " + query);
+                    handler.post(() -> callback.onError(connEx));
                     return;
                 }
 
@@ -95,7 +100,7 @@ public class connect_sql {
                 statement = null;
                 resultSet = null;
             } catch (Exception e) {
-                Log.e("MSSQL_QUERY_ERROR", "Query failed: " + e.getMessage());
+                Log.e(TAG, "Query execution failed: " + e.getMessage(), e);
                 handler.post(() -> callback.onError(e));
             } finally {
                 try { if (resultSet != null) resultSet.close(); } catch (Exception ignored) { }

@@ -19,15 +19,19 @@ public final class StatusColorUtil {
         @ColorRes int foregroundResource;
         switch (normalized) {
             case "approved":
+            case "resolved":
                 backgroundColor = ContextCompat.getColor(badge.getContext(), R.color.status_approved_bg);
                 foregroundResource = R.color.status_approved_fg;
                 break;
+            case "in review":
+            case "in progress":
             case "ready for pickup":
             case "returned":
                 backgroundColor = ContextCompat.getColor(badge.getContext(), R.color.status_ready_bg);
                 foregroundResource = R.color.status_ready_fg;
                 break;
             case "declined":
+            case "dismissed":
                 backgroundColor = ContextCompat.getColor(badge.getContext(), R.color.status_declined_bg);
                 foregroundResource = R.color.status_declined_fg;
                 break;
