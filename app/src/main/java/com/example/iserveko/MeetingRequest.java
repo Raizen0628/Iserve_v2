@@ -17,11 +17,11 @@ public class MeetingRequest {
         this.id = id;
         this.residentEmail = residentEmail;
         this.residentName = residentName;
-        this.meetingDate = meetingDate;
+        this.meetingDate = StatusColorUtil.formatRequestDate(meetingDate);
         this.meetingTime = meetingTime;
         this.purpose = purpose;
         this.status = status;
-        this.requestDate = requestDate;
+        this.requestDate = StatusColorUtil.formatRequestDate(requestDate);
         this.remarks = remarks;
     }
 

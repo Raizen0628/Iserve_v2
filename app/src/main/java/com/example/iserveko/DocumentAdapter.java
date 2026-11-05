@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -24,6 +25,7 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
         void onApprove(DocumentRequest request);
         void onDecline(DocumentRequest request);
         void onReadyForPickup(DocumentRequest request);
+        void onDelete(DocumentRequest request);
     }
 
     public DocumentAdapter(List<DocumentRequest> list, boolean isOfficial, OnDocumentActionListener listener) {
@@ -78,6 +80,8 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
 
         if (isOfficial) {
             holder.layoutOfficialActions.setVisibility(View.VISIBLE);
+            holder.btnDelete.setVisibility(View.VISIBLE);
+
             if ("Pending".equalsIgnoreCase(status)) {
                 holder.btnApprove.setVisibility(View.VISIBLE);
                 holder.btnDecline.setVisibility(View.VISIBLE);
@@ -87,7 +91,9 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
                 holder.btnDecline.setVisibility(View.VISIBLE);
                 holder.btnReadyForPickup.setVisibility(View.VISIBLE);
             } else {
-                holder.layoutOfficialActions.setVisibility(View.GONE);
+                holder.btnApprove.setVisibility(View.GONE);
+                holder.btnDecline.setVisibility(View.GONE);
+                holder.btnReadyForPickup.setVisibility(View.GONE);
             }
 
             holder.btnApprove.setOnClickListener(v -> {
@@ -98,6 +104,9 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
             });
             holder.btnReadyForPickup.setOnClickListener(v -> {
                 if (listener != null) listener.onReadyForPickup(request);
+            });
+            holder.btnDelete.setOnClickListener(v -> {
+                if (listener != null) listener.onDelete(request);
             });
         } else {
             holder.layoutOfficialActions.setVisibility(View.GONE);
@@ -114,6 +123,7 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
                 txtAddressContact, txtRequestDate, txtStatusBadge, txtRemarks;
         LinearLayout layoutOfficialActions;
         Button btnApprove, btnDecline, btnReadyForPickup;
+        ImageView btnDelete;
 
         public DocumentViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -131,6 +141,7 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.Docume
             btnApprove = itemView.findViewById(R.id.btnApprove);
             btnDecline = itemView.findViewById(R.id.btnDecline);
             btnReadyForPickup = itemView.findViewById(R.id.btnReadyForPickup);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
         }
     }
 }

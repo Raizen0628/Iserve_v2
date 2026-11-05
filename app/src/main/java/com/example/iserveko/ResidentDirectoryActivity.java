@@ -91,29 +91,25 @@ public class ResidentDirectoryActivity extends AppCompatActivity {
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            Intent intent = null;
             if (itemId == R.id.nav_home) {
-                Intent intent = new Intent(this, OfficialDashboardActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                if (!officialEmail.isEmpty()) intent.putExtra("EMAIL", officialEmail);
-                startActivity(intent);
-                return true;
+                intent = new Intent(this, OfficialDashboardActivity.class);
             } else if (itemId == R.id.nav_announcements) {
-                Intent intent = new Intent(this, AnnouncementOfficialActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
-                return true;
+                intent = new Intent(this, AnnouncementOfficialActivity.class);
             } else if (itemId == R.id.nav_services) {
-                Intent intent = new Intent(this, Service.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                intent.putExtra("IS_OFFICIAL", true);
-                startActivity(intent);
-                return true;
+                intent = new Intent(this, Service.class);
+            } else if (itemId == R.id.nav_notifications) {
+                intent = new Intent(this, NotificationsActivity.class);
             } else if (itemId == R.id.nav_profile) {
-                Intent intent = new Intent(this, profile.class);
+                intent = new Intent(this, profile.class);
+            }
+
+            if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 intent.putExtra("IS_OFFICIAL", true);
                 if (!officialEmail.isEmpty()) intent.putExtra("EMAIL", officialEmail);
                 startActivity(intent);
+                overridePendingTransition(0, 0);
                 return true;
             }
             return false;

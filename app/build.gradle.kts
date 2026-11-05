@@ -6,13 +6,13 @@ plugins {
 
 val dbProperties = Properties().apply {
     val propertiesFile = rootProject.file("local.properties")
-    require(propertiesFile.isFile) { "Create local.properties with the required db.* settings." }
-    propertiesFile.inputStream().use { load(it) }
+    if (propertiesFile.isFile) {
+        propertiesFile.inputStream().use { load(it) }
+    }
 }
 
-fun requiredDbProperty(key: String): String =
-    dbProperties.getProperty(key)?.takeIf { it.isNotBlank() }
-        ?: error("Missing database setting " + key + " in local.properties")
+fun dbProperty(key: String, defaultValue: String = ""): String =
+    dbProperties.getProperty(key)?.takeIf { it.isNotBlank() } ?: defaultValue
 
 fun buildConfigString(value: String): String =
     "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
@@ -36,11 +36,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "MSSQL_SERVER", buildConfigString(requiredDbProperty("db.server")))
-        buildConfigField("String", "MSSQL_PORT", buildConfigString(requiredDbProperty("db.port")))
-        buildConfigField("String", "MSSQL_DATABASE", buildConfigString(requiredDbProperty("db.name")))
-        buildConfigField("String", "MSSQL_USERNAME", buildConfigString(requiredDbProperty("db.user")))
-        buildConfigField("String", "MSSQL_PASSWORD", buildConfigString(requiredDbProperty("db.password")))
+        buildConfigField("String", "MSSQL_SERVER", buildConfigString(dbProperty("db.server", "iserveko.mssql.somee.com")))
+        buildConfigField("String", "MSSQL_PORT", buildConfigString(dbProperty("db.port", "1433")))
+        buildConfigField("String", "MSSQL_DATABASE", buildConfigString(dbProperty("db.name", "iserveko")))
+        buildConfigField("String", "MSSQL_USERNAME", buildConfigString(dbProperty("db.user", "XAVRYN_SQLLogin_1")))
+        buildConfigField("String", "MSSQL_PASSWORD", buildConfigString(dbProperty("db.password", "raijin28")))
     }
 
     buildTypes {

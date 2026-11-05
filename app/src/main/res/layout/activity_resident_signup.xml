@@ -123,6 +123,24 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:text="Mobile Number"
+                android:textColor="#FF000000"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/mobile_input"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/rounded"
+                android:inputType="phone"
+                android:paddingStart="16dp"
+                android:textColor="#FF000000" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:text="Address / Purok"
                 android:textColor="#FF000000"
                 android:textStyle="bold" />

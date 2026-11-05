@@ -90,6 +90,8 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 targetClass = OfficialDashboardActivity.class;
             } else if (itemId == R.id.nav_services) {
                 targetClass = Service.class;
+            } else if (itemId == R.id.nav_notifications) {
+                targetClass = NotificationsActivity.class;
             } else if (itemId == R.id.nav_profile) {
                 targetClass = profile.class;
             }
@@ -98,7 +100,9 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
                 Intent intent = new Intent(this, targetClass);
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 intent.putExtra("IS_OFFICIAL", true);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
                 startActivity(intent);
+                overridePendingTransition(0, 0);
                 return true;
             }
             return false;
@@ -231,6 +235,13 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
             boolean saved = false;
             try (Connection con = connect_sql.getConnection()) {
                 if (con != null) {
+                    try (PreparedStatement alter1 = con.prepareStatement("IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'announcements' AND COLUMN_NAME = 'event_date') ALTER TABLE announcements ADD event_date VARCHAR(50) NULL")) {
+                        alter1.executeUpdate();
+                    } catch (Exception ignored) {}
+                    try (PreparedStatement alter2 = con.prepareStatement("IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'announcements' AND COLUMN_NAME = 'event_time') ALTER TABLE announcements ADD event_time VARCHAR(50) NULL")) {
+                        alter2.executeUpdate();
+                    } catch (Exception ignored) {}
+
                     try (PreparedStatement stmt = con.prepareStatement(
                             "INSERT INTO announcements (title, description, date, is_pinned, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)")) {
                         stmt.setString(1, title);
@@ -387,13 +398,13 @@ public class AnnouncementOfficialActivity extends AppCompatActivity {
     }
 
     private void setEventDate(PreparedStatement statement, int index, String value) throws SQLException {
-        if (value == null || value.isEmpty()) statement.setNull(index, java.sql.Types.DATE);
-        else statement.setDate(index, java.sql.Date.valueOf(value));
+        if (value == null || value.isEmpty()) statement.setNull(index, java.sql.Types.VARCHAR);
+        else statement.setString(index, value);
     }
 
     private void setEventTime(PreparedStatement statement, int index, String value) throws SQLException {
-        if (value == null || value.isEmpty()) statement.setNull(index, java.sql.Types.TIME);
-        else statement.setTime(index, java.sql.Time.valueOf(value));
+        if (value == null || value.isEmpty()) statement.setNull(index, java.sql.Types.VARCHAR);
+        else statement.setString(index, value);
     }
 
     private void showDeleteConfirmationDialog(Announcement announcement) {

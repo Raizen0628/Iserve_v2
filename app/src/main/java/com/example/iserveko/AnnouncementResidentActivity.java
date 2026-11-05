@@ -6,7 +6,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.widget.EditText;
-import android.widget.ImageButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -54,9 +53,6 @@ public class AnnouncementResidentActivity extends AppCompatActivity {
         databaseHelper = new DatabaseHelper(this);
         recyclerView = findViewById(R.id.recyclerViewAnnouncements);
         inputSearch = findViewById(R.id.inputSearch);
-
-        ImageButton btnBack = findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> finish());
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 

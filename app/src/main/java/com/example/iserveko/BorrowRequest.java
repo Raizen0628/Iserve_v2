@@ -20,10 +20,10 @@ public class BorrowRequest {
         this.residentName = residentName;
         this.tablesRequested = tablesRequested;
         this.chairsRequested = chairsRequested;
-        this.borrowDate = borrowDate;
+        this.borrowDate = StatusColorUtil.formatRequestDate(borrowDate);
         this.purpose = purpose;
         this.status = status;
-        this.requestDate = requestDate;
+        this.requestDate = StatusColorUtil.formatRequestDate(requestDate);
         this.remarks = remarks;
     }
 

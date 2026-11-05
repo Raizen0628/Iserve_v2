@@ -95,7 +95,22 @@ public class ResidentDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        setupBottomNavigation();
+
+        loadLatestAnnouncement();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setupBottomNavigation();
+        updateResidentGreeting();
+        loadLatestAnnouncement();
+    }
+
+    private void setupBottomNavigation() {
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
+        if (bottomNavigationView == null) return;
         bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -124,15 +139,6 @@ public class ResidentDashboardActivity extends AppCompatActivity {
             }
             return false;
         });
-
-        loadLatestAnnouncement();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        updateResidentGreeting();
-        loadLatestAnnouncement();
     }
 
     private void updateResidentGreeting() {

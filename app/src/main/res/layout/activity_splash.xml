@@ -9,8 +9,8 @@
     android:padding="24dp">
 
     <ImageView
-        android:layout_width="140dp"
-        android:layout_height="140dp"
+        android:layout_width="190dp"
+        android:layout_height="190dp"
         android:contentDescription="@string/app_name"
         android:src="@drawable/iserveko_logo" />
 

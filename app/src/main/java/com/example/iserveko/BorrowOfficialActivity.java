@@ -101,6 +101,8 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                 targetClass = AnnouncementOfficialActivity.class;
             } else if (itemId == R.id.nav_services) {
                 targetClass = Service.class;
+            } else if (itemId == R.id.nav_notifications) {
+                targetClass = NotificationsActivity.class;
             } else if (itemId == R.id.nav_profile) {
                 targetClass = profile.class;
             }
@@ -109,7 +111,9 @@ public class BorrowOfficialActivity extends AppCompatActivity {
                 Intent intent = new Intent(this, targetClass);
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 intent.putExtra("IS_OFFICIAL", true);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
                 startActivity(intent);
+                overridePendingTransition(0, 0);
                 return true;
             }
             return false;

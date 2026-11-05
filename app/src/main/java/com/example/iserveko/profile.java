@@ -417,11 +417,79 @@ public class profile extends AppCompatActivity {
     }
 
     private void showChangePasswordDialog() {
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = Math.round(20 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad / 2, pad, 0);
+
+        EditText newPassInput = new EditText(this);
+        newPassInput.setHint("New Password");
+        newPassInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        layout.addView(newPassInput);
+
+        EditText confirmPassInput = new EditText(this);
+        confirmPassInput.setHint("Confirm New Password");
+        confirmPassInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        layout.addView(confirmPassInput);
+
         new AlertDialog.Builder(this)
-                .setTitle("Password change unavailable")
-                .setMessage("Password changes are unavailable until secure password storage is configured on SQL Server.")
-                .setPositiveButton(android.R.string.ok, null)
+                .setTitle("Change Password")
+                .setView(layout)
+                .setPositiveButton("Update", (dialog, which) -> {
+                    String newPass = newPassInput.getText().toString();
+                    String confirmPass = confirmPassInput.getText().toString();
+
+                    if (newPass.isEmpty()) {
+                        Toast.makeText(this, "Please enter a new password", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (newPass.length() < 8) {
+                        Toast.makeText(this, "Password must be at least 8 characters long", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (!newPass.equals(confirmPass)) {
+                        Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    updatePasswordOnServerAndLocal(newPass);
+                })
+                .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void updatePasswordOnServerAndLocal(String newPassword) {
+        profileExecutor.execute(() -> {
+            boolean serverUpdated = false;
+            try (Connection con = connect_sql.getConnection()) {
+                if (con != null) {
+                    try (PreparedStatement stmt = con.prepareStatement(
+                            "UPDATE users SET password = ? WHERE email = ?")) {
+                        stmt.setString(1, newPassword);
+                        stmt.setString(2, residentEmail);
+                        serverUpdated = stmt.executeUpdate() > 0;
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("PASSWORD_UPDATE", "Failed to update password on SQL Server", e);
+            }
+
+            boolean localUpdated = false;
+            try (DatabaseHelper dbHelper = new DatabaseHelper(this)) {
+                localUpdated = dbHelper.updatePassword(residentEmail, newPassword);
+            } catch (Exception ignored) {}
+
+            final boolean success = serverUpdated || localUpdated;
+
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (success) {
+                    Toast.makeText(this, "Password updated successfully!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Failed to update password. Please check connection.", Toast.LENGTH_LONG).show();
+                }
+            });
+        });
     }
 
     @Override

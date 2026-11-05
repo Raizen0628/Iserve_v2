@@ -51,7 +51,7 @@ public class OfficialSignupActivity extends AppCompatActivity {
         Button registerButton = findViewById(R.id.btnRegister);
 
         // Setup Spinner
-        String[] positions = {"Barangay Captain", "Kagawad", "Secretary", "Treasurer", "Other"};
+        String[] positions = {"Barangay Captain", "Kagawad", "Secretary", "Treasurer"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, positions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         positionSpinner.setAdapter(adapter);
@@ -74,6 +74,8 @@ public class OfficialSignupActivity extends AppCompatActivity {
             if (first.isEmpty() || last.isEmpty() || email.isEmpty()
                     || mobile.isEmpty() || pass.isEmpty()) {
                 Toast.makeText(this, "Please fill in all required fields", Toast.LENGTH_SHORT).show();
+            } else if (pass.length() < 8) {
+                Toast.makeText(this, "Password must be at least 8 characters long", Toast.LENGTH_SHORT).show();
             } else if (!pass.equals(confirm)) {
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             } else {

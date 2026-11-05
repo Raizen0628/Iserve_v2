@@ -119,7 +119,7 @@
                     android:layout_height="40dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="10dp"
-                    android:src="@android:drawable/ic_menu_delete"
+                    android:src="@drawable/delete"
                     app:tint="#F44336"
                     tools:ignore="ContentDescription" />
             </LinearLayout>

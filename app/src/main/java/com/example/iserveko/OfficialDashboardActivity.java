@@ -56,39 +56,51 @@ public class OfficialDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        setupBottomNavigation();
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setupBottomNavigation();
+    }
+
+    private void setupBottomNavigation() {
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigation);
+        if (bottomNavigationView == null) return;
         bottomNavigationView.setOnItemSelectedListener(null);
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 return true;
-            } else if (itemId == R.id.nav_announcements) {
-                Intent intent = new Intent(this, AnnouncementOfficialActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
-                return true;
+            }
+            Intent intent = null;
+            if (itemId == R.id.nav_announcements) {
+                intent = new Intent(this, AnnouncementOfficialActivity.class);
             } else if (itemId == R.id.nav_services) {
-                Intent intent = new Intent(this, Service.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                intent.putExtra("IS_OFFICIAL", true);
-                startActivity(intent);
-                return true;
+                intent = new Intent(this, Service.class);
+            } else if (itemId == R.id.nav_notifications) {
+                intent = new Intent(this, NotificationsActivity.class);
             } else if (itemId == R.id.nav_profile) {
-                Intent intent = new Intent(this, profile.class);
+                intent = new Intent(this, profile.class);
+            }
+
+            if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 intent.putExtra("IS_OFFICIAL", true);
                 if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
                 startActivity(intent);
+                overridePendingTransition(0, 0);
                 return true;
             }
             return false;
         });
-
     }
 
     private void showPendingRequestsTypeDialog() {
-        String[] options = {"📄 Document Requests (Clearances & Certificates)", "🪑 Equipment Borrowing (Tables & Chairs)", "📅 Meeting Requests", "💬 Complaints & Reports"};
+        String[] options = {"📄 Document Requests (Clearances & Certificates)", "🪑 Equipment Borrowing (Tables & Chairs)", "Meeting Requests", "💬 Complaints & Reports"};
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Manage Pending Requests")
                 .setItems(options, (dialog, which) -> {

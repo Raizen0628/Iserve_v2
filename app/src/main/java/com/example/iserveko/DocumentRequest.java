@@ -25,7 +25,7 @@ public class DocumentRequest {
         this.purpose = purpose;
         this.specificDetails = specificDetails;
         this.status = status;
-        this.requestDate = requestDate;
+        this.requestDate = StatusColorUtil.formatRequestDate(requestDate);
         this.remarks = remarks;
     }
 

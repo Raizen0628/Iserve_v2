@@ -119,6 +119,8 @@ public class DocumentOfficialActivity extends AppCompatActivity {
                 targetClass = AnnouncementOfficialActivity.class;
             } else if (itemId == R.id.nav_services) {
                 targetClass = Service.class;
+            } else if (itemId == R.id.nav_notifications) {
+                targetClass = NotificationsActivity.class;
             } else if (itemId == R.id.nav_profile) {
                 targetClass = profile.class;
             }
@@ -127,7 +129,9 @@ public class DocumentOfficialActivity extends AppCompatActivity {
                 Intent intent = new Intent(this, targetClass);
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 intent.putExtra("IS_OFFICIAL", true);
+                if (getIntent().hasExtra("EMAIL")) intent.putExtra("EMAIL", getIntent().getStringExtra("EMAIL"));
                 startActivity(intent);
+                overridePendingTransition(0, 0);
                 return true;
             }
             return false;
@@ -195,6 +199,11 @@ public class DocumentOfficialActivity extends AppCompatActivity {
             public void onReadyForPickup(DocumentRequest request) {
                 handleReadyForPickupRequest(request);
             }
+
+            @Override
+            public void onDelete(DocumentRequest request) {
+                handleDeleteRequest(request);
+            }
         });
         recyclerView.setAdapter(adapter);
         adapter.filterByStatus(currentSelectedStatus);
@@ -246,6 +255,42 @@ public class DocumentOfficialActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void handleDeleteRequest(DocumentRequest request) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Document Request")
+                .setMessage("Are you sure you want to delete the document request (" + request.getDocumentType() + ") for " + request.getFullName() + "?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteDocumentRequestFromMSSQL(request))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteDocumentRequestFromMSSQL(DocumentRequest request) {
+        executor.execute(() -> {
+            boolean success = false;
+            try (Connection con = connect_sql.getConnection()) {
+                if (con != null) {
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "DELETE FROM document_requests WHERE id = ?")) {
+                        ps.setInt(1, request.getId());
+                        success = ps.executeUpdate() == 1;
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("DOC_DELETE_MSSQL_ERR", "Document request delete failed.", e);
+            }
+
+            final boolean deleted = success;
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                String message = deleted
+                        ? "Document request deleted!"
+                        : "Could not delete document request from SQL Server.";
+                Toast.makeText(DocumentOfficialActivity.this, message, Toast.LENGTH_SHORT).show();
+                loadDocumentRequests();
+            });
+        });
     }
 
     private void applyStatus(DocumentRequest request, String status, String remarks) {

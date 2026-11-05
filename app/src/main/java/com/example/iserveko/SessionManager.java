@@ -12,8 +12,25 @@ public final class SessionManager {
     private static final String KEY_DISPLAY_NAME = "display_name";
     private static final String KEY_ADDRESS = "user_address";
     private static final String KEY_MOBILE = "user_mobile";
+    private static final String KEY_REMEMBERED_EMAIL = "remembered_email";
+    private static final String KEY_REMEMBER_ME = "remember_me_checked";
 
     private SessionManager() { }
+
+    public static void setRememberedCredentials(Context context, String email, boolean remember) {
+        preferences(context).edit()
+                .putBoolean(KEY_REMEMBER_ME, remember)
+                .putString(KEY_REMEMBERED_EMAIL, remember ? email : "")
+                .apply();
+    }
+
+    public static String getRememberedEmail(Context context) {
+        return preferences(context).getString(KEY_REMEMBERED_EMAIL, "");
+    }
+
+    public static boolean isRememberMeChecked(Context context) {
+        return preferences(context).getBoolean(KEY_REMEMBER_ME, false);
+    }
 
     public static void saveSession(Context context, String email, boolean isOfficial) {
         preferences(context).edit()
@@ -29,8 +46,16 @@ public final class SessionManager {
     public static void saveUserSession(Context context, String userId, String fullName,
                                        String email, String address, String mobile,
                                        boolean isOfficial) {
-        preferences(context).edit().clear()
-                .putString(KEY_USER_ID, userId)
+        SharedPreferences prefs = preferences(context);
+        boolean remember = prefs.getBoolean(KEY_REMEMBER_ME, false);
+        String rememberedEmail = prefs.getString(KEY_REMEMBERED_EMAIL, "");
+
+        SharedPreferences.Editor editor = prefs.edit().clear();
+        if (remember) {
+            editor.putBoolean(KEY_REMEMBER_ME, true);
+            editor.putString(KEY_REMEMBERED_EMAIL, rememberedEmail);
+        }
+        editor.putString(KEY_USER_ID, userId)
                 .putString(KEY_DISPLAY_NAME, fullName)
                 .putString(KEY_EMAIL, email)
                 .putString(KEY_ADDRESS, address)
@@ -68,7 +93,16 @@ public final class SessionManager {
     }
 
     public static void clearSession(Context context) {
-        preferences(context).edit().clear().apply();
+        SharedPreferences prefs = preferences(context);
+        boolean remember = prefs.getBoolean(KEY_REMEMBER_ME, false);
+        String rememberedEmail = prefs.getString(KEY_REMEMBERED_EMAIL, "");
+
+        SharedPreferences.Editor editor = prefs.edit().clear();
+        if (remember) {
+            editor.putBoolean(KEY_REMEMBER_ME, true);
+            editor.putString(KEY_REMEMBERED_EMAIL, rememberedEmail);
+        }
+        editor.apply();
     }
 
     private static SharedPreferences preferences(Context context) {

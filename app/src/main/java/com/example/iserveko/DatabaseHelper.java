@@ -13,7 +13,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "IServeKo.db";
-    private static final int DATABASE_VERSION = 12;
+    private static final int DATABASE_VERSION = 13;
 
     // Users table
     private static final String TABLE_USERS = "users";
@@ -159,17 +159,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void seedDefaultAnnouncements(SQLiteDatabase db) {
-        try (Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_ANNOUNCEMENTS, null)) {
-            if (cursor.moveToFirst() && cursor.getInt(0) == 0) {
-                insertAnnouncement(db, "Barangay Clean-up Drive",
-                        "Join us this Saturday for our monthly community clean-up drive. Meet at the barangay hall at 6:00 AM. Materials will be provided.",
-                        "Sept 15, 2026", 1);
-
-                insertAnnouncement(db, "Health Center Advisory",
-                        "Free routine vaccination for kids aged 0-5 years old will be available on Tuesday, Sept 16, from 8:00 AM to 3:00 PM.",
-                        "Sept 12, 2026", 0);
-            }
-        }
+        // Do not seed default/dummy announcements.
     }
 
     private void insertAnnouncement(SQLiteDatabase db, String title, String desc, String date, int pinned) {
@@ -252,12 +242,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ANNOUNCEMENTS);
         createUsersTable(db);
         createAnnouncementsTable(db);
         createBorrowTables(db);
         createDocumentRequestsTable(db);
         createMeetingRequestsTable(db);
-        seedDefaultAnnouncements(db);
         seedBorrowInventory(db);
     }
 

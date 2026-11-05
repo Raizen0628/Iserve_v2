@@ -57,4 +57,35 @@ public final class StatusColorUtil {
             badge.setCompoundDrawablePadding(Math.round(6 * badge.getResources().getDisplayMetrics().density));
         }
     }
+
+    public static String formatRequestDate(String rawDate) {
+        if (rawDate == null || rawDate.trim().isEmpty()) {
+            return "";
+        }
+        String cleaned = rawDate.trim();
+        if (cleaned.contains(".")) {
+            cleaned = cleaned.substring(0, cleaned.indexOf('.'));
+        }
+        String[] formats = {
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd",
+            "MMM dd, yyyy",
+            "MMM dd yyyy"
+        };
+        for (String fmt : formats) {
+            try {
+                java.text.SimpleDateFormat parser = new java.text.SimpleDateFormat(fmt, java.util.Locale.US);
+                parser.setLenient(false);
+                java.util.Date date = parser.parse(cleaned);
+                if (date != null) {
+                    java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                    return formatter.format(date);
+                }
+            } catch (Exception ignored) {}
+        }
+        if (cleaned.contains(" ")) {
+            cleaned = cleaned.substring(0, cleaned.indexOf(' '));
+        }
+        return cleaned;
+    }
 }

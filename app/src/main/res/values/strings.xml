@@ -30,7 +30,7 @@
     <string name="complaints_desc">Submit concerns and feedback</string>
     <string name="emergency_hotline">🚨 Emergency Hotline</string>
     <string name="emergency_desc">Quick access to emergency contacts</string>
-    <string name="event_calendar">📅 Event Calendar</string>
+    <string name="event_calendar">Event Calendar</string>
     <string name="event_desc">View upcoming barangay events</string>
     <string name="nav_home">Home</string>
     <string name="nav_announcements">Announcements</string>
@@ -76,7 +76,7 @@
     <string name="emoji_fire">🚒</string>
     <string name="emoji_drrm">🛟</string>
     <string name="emoji_other_contacts">☎️</string>
-    <string name="emoji_meeting_request">📅</string>
+    <string name="emoji_meeting_request">📋</string>
 
     <string name="emergency_hotline_title">National Emergency Hotline</string>
     <string name="emergency_hotline_desc">National emergency short code.</string>

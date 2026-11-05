@@ -12,7 +12,7 @@ public class NotificationItem {
         this.title = title;
         this.type = type;
         this.status = status;
-        this.date = date;
+        this.date = StatusColorUtil.formatRequestDate(date);
         this.details = details;
         this.remarks = remarks;
     }

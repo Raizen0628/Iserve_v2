@@ -8,7 +8,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -33,8 +32,17 @@ public class MainActivity extends AppCompatActivity {
 
         EditText usernameInput = findViewById(R.id.username_input);
         EditText passwordInput = findViewById(R.id.password_input);
+        android.widget.CheckBox rememberCheckBox = findViewById(R.id.checkBox);
         Button loginButton = findViewById(R.id.button);
         TextView signupText = findViewById(R.id.signupText);
+
+        if (SessionManager.isRememberMeChecked(this)) {
+            String savedEmail = SessionManager.getRememberedEmail(this);
+            if (!savedEmail.isEmpty()) {
+                usernameInput.setText(savedEmail);
+                rememberCheckBox.setChecked(true);
+            }
+        }
 
         loginButton.setOnClickListener(v -> {
             String username = usernameInput.getText().toString().trim();
@@ -43,26 +51,15 @@ public class MainActivity extends AppCompatActivity {
             if (username.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please enter all fields", Toast.LENGTH_SHORT).show();
             } else {
-                loginUser(username, password);
+                loginUser(username, password, rememberCheckBox.isChecked());
             }
         });
 
         signupText.setOnClickListener(v ->
                 startActivity(new Intent(MainActivity.this, AccountSetupActivity.class)));
-
-        TextView forgotPasswordText = findViewById(R.id.forgotPasswordText);
-        forgotPasswordText.setOnClickListener(v -> showForgotPasswordDialog());
     }
 
-    private void showForgotPasswordDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Password recovery unavailable")
-                .setMessage("Secure password recovery is unavailable until it is configured on the SQL Server.")
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
-    }
-
-    private void loginUser(String username, String password) {
+    private void loginUser(String username, String password, boolean rememberMe) {
         // 1. Check MSSQL Server First
         String sqlQuery = "SELECT * FROM users WHERE email = ? AND password = ?";
 
@@ -84,6 +81,11 @@ public class MainActivity extends AppCompatActivity {
                         boolean isOfficial = "Barangay Official".equalsIgnoreCase(role);
                         SessionManager.saveUserSession(
                                 MainActivity.this, userId, fullName, email, address, mobile, isOfficial);
+                        if (rememberMe) {
+                            SessionManager.setRememberedCredentials(MainActivity.this, email, true);
+                        } else {
+                            SessionManager.setRememberedCredentials(MainActivity.this, "", false);
+                        }
                         android.util.Log.d("LOGIN_PROFILE",
                                 "Authenticated user id=" + userId + ", email=" + email
                                         + ", name=" + fullName + ", address=" + address
