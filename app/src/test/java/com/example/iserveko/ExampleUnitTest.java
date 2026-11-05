@@ -62,6 +62,56 @@ public class ExampleUnitTest {
             fail("Insert test failed: " + e.getMessage());
         }
     }
+
+    @Test
+    public void testAnnouncementInsert() {
+        try (Connection con = connect_sql.getConnection()) {
+            assertNotNull(con);
+
+            // Ensure event_date and event_time columns exist on MSSQL server
+            try (PreparedStatement alter1 = con.prepareStatement("IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'announcements' AND COLUMN_NAME = 'event_date') ALTER TABLE announcements ADD event_date VARCHAR(50) NULL")) {
+                alter1.executeUpdate();
+            } catch (Exception e) {
+                System.out.println("Alter event_date: " + e.getMessage());
+            }
+
+            try (PreparedStatement alter2 = con.prepareStatement("IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'announcements' AND COLUMN_NAME = 'event_time') ALTER TABLE announcements ADD event_time VARCHAR(50) NULL")) {
+                alter2.executeUpdate();
+            } catch (Exception e) {
+                System.out.println("Alter event_time: " + e.getMessage());
+            }
+
+            String title = "Test Title";
+            String desc = "Test Description";
+            String dateStr = "Nov 17, 2026";
+            boolean isPinned = false;
+            String eventDate = "2026-11-17";
+            String eventTime = "12:00:00";
+
+            String sql = "INSERT INTO announcements (title, description, date, is_pinned, event_date, event_time) VALUES (?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement stmt = con.prepareStatement(sql)) {
+                stmt.setString(1, title);
+                stmt.setString(2, desc);
+                stmt.setString(3, dateStr);
+                stmt.setBoolean(4, isPinned);
+                stmt.setString(5, eventDate);
+                stmt.setString(6, eventTime);
+                
+                int rows = stmt.executeUpdate();
+                System.out.println("Inserted announcement rows: " + rows);
+                assertEquals(1, rows);
+            }
+
+            // Clean up
+            try (PreparedStatement del = con.prepareStatement("DELETE FROM announcements WHERE title = 'Test Title'")) {
+                del.executeUpdate();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Announcement test failed: " + e.getMessage());
+        }
+    }
 }
 
 
