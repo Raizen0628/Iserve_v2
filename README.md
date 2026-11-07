@@ -76,6 +76,16 @@ Then read them through `BuildConfig` fields in `app/build.gradle`.
 | `borrow_requests` | Equipment borrowing requests |
 | `meeting_requests` | Meeting requests with officials |
 
+## Demo accounts
+
+Use these accounts to try the app. They are for testing only and contain no real data.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Resident | `resident` | `Resident123` |
+| Official (Admin) | `admin` | `admin123` |
+
+
 ## Project structure
 
 ```
