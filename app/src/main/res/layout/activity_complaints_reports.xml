@@ -52,7 +52,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingBottom="24dp">
+                android:paddingBottom="280dp">
 
                 <!-- Submission Form Card -->
                 <com.google.android.material.card.MaterialCardView
